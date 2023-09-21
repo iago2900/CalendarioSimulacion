@@ -2,6 +2,12 @@
 
 
 {% block main %}
+
+    <form id="formulario">
+        <input id="titulo" type="text">
+        <input id="fecha" type="date">
+        <button class="btn btn-primary" id="btnAddEvento">Add event</button>
+    </form>
     <div id="calendario"></div>
     <script>
         $(document).ready(function() {
@@ -14,16 +20,27 @@
                 defaultView: 'month', // Vista inicial: mes
                 events: [
                     // Aquí puedes añadir tus eventos
-                ],
-                lang: 'es', // Configuración del idioma a español
+                ]
+
             });
 
-            $('#btnMonth').on('click', function() {
-                calendar.fullCalendar('changeView', 'month'); // Cambiar a vista de mes
+            $('#formulario').submit(function(event) {
+                event.preventDefault();
+
+                var titulo = $('#titulo').val();
+                var fecha = $('#fecha').val();
+
+                calendar.fullCalendar('renderEvent', {
+                    title: titulo,
+                    start: fecha,
+                    allDay: true
+                });
+
+                $('#formulario-evento').hide();
             });
 
-            $('#btnWeek').on('click', function() {
-                calendar.fullCalendar('changeView', 'agendaWeek'); // Cambiar a vista de semana
+            $('#btnAddEvento').on('click', function() {
+                $('#formulario-evento').show();
             });
         });
     </script>
