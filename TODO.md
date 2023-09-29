@@ -1,16 +1,11 @@
-# SQL
+# Register / Login (NOW)
 
-* Initialize SQL DDBB (copy from AIS project)
-* Define tables to store data
-* Create tables in SQL
+* Add name and surname fields
+* write page navigation
+* Check from Finance
+* https://flask-login.readthedocs.io/en/latest/
 
-  * Users: id, username, password_hashed, role_id (foreign key), group_id (foreign key)
-  * Roles: id, role
-  * Logs: id, action, timestamp, event_id (foreign key)
-  * Activities: id, title, date 
-  * Groups: id, group
-
-# Calendar
+# Calendar (for later improvements)
 
 * How to save events into DDBB
 * An event must have: 
@@ -25,10 +20,5 @@
 
 * Admin: can add events
 * User: can join an event
-
-# Register / Login
-
-* Check from Finance
-* https://flask-login.readthedocs.io/en/latest/
 
 # Export

@@ -5,46 +5,33 @@
 3. Create your virtual environment using `virtualenv venv`
 4. Init the virtual environment `venv/Scripts/activate`
 5. Install the required dependencies using `pip install -r requirements.txt`
-6. Run `python wsgi.py`
-
-## Running instructions
-
-- Create a virtualenvironment:
-  
-```python3.9 -m virtualenv venv```
-
-- Init the virtual environment + install the requirements:
-
-```source venv/bin/activate```
-
-```python3.9 -m pip install -r requirements.txt```
-
-- Run:
-
-```python3.9 wsgi.py```
-
-- Go to http://localhost:5000
+6. Run `flask run`
+7. Go to http://localhost:5000 
 
 
-### Redo Database
+## Redo Database
 If a change to the Models has to be done you can upload again demo data through the following steps:
-- Delete de current database ```db.sqlite```
-- Make sure that the Models changes are reflected on models.py
-- Create the database through ```create_app.py```
-- Run the app through ```python3 wsgi.py```
-- Upload all data by running all helpers through ```/run_all_helpers```
+- Delete de current database `SIMRadar.db`
+- Check if tables are in `create_db.py`
+- Run `python create_db.py` to create new database
 
+## DDBB current structure:
+ * Users: id, name, surname, username, password_hashed, role_id (foreign key), group_id (foreign key)
+ * Roles: id, role
+ * Logs: id, action, timestamp, event_id (foreign key)
+ * Events: id, title, date, start_datetime, end_datetime, group_id (foreign key)
+ * Groups: id, group
 
 ## Stack
 - https://www.sqlalchemy.org/
 - https://flask.palletsprojects.com/en/2.0.x/
 
-### SQLite:
-To work with SQLITE [sqlite3](https://sqlite.org/index.html) can be used. Once the database is created through ```python3.9 create_app.py``` open it:
-- ```sqlite3 db.sqlite```
+## SQLite:
+To work with SQLITE [sqlite3](https://sqlite.org/index.html) can be used. Once the database is created through `python create_db.py` open it:
+- `sqlite3 SIMRadar.db`
 
 Check the schema:
-- ```.schema```
+- `.schema`
 
 Perform SQL queries:
-- ```SELECT email, name FROM user;```
+- `SELECT username, name FROM users;`
