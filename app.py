@@ -2,8 +2,9 @@ import os
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
+from datetime import datetime
 
-from models import db, Users, Roles, Logs, Activities, Groups, Events
+from models import db, Users, Roles, Logs, Groups, Events
 from helpers import login_required, apology
 
 app = Flask(__name__)
@@ -16,12 +17,51 @@ Session(app)
 db.init_app(app)
 
 
-@app.route("/")
+@app.route("/", methods=['GET'])
 @login_required
 def index():
-    """Show list of activities"""
+    """Show list of events"""
+    events = [event for event in Events.query.all()]
+    return render_template("index.html", events=events)
 
-    return render_template("index.html")
+@app.route("/create-event", methods=["GET", "POST"])
+@login_required
+def create_event():
+    """
+    Form to create new event.
+    """
+    if request.method == "GET":
+
+        groups = [(group.id, group.name) for group in Groups.query.all()]
+
+        return render_template("create_event.html", groups=groups)
+    else: #post
+        
+        # Ensure mandatory fields are submitted
+        if not request.form.get("title"):
+            return apology("must provide title", 403)
+        elif not request.form.get("date"):
+            return apology("must provide date", 403)
+        elif not request.form.get("start_time"):
+            return apology("must provide start time", 403)
+        elif not request.form.get("end_time"):
+            return apology("must provide end time", 403)
+        
+        # Get data from new event
+        title = request.form.get("title")
+        description = request.form.get("description") # if empty is ""
+        date = datetime.strptime(request.form.get("date"),'%Y-%m-%d').date()
+        start_time = datetime.strptime(request.form.get("start_time"), "%H:%M").time()
+        end_time = datetime.strptime(request.form.get("end_time"), "%H:%M").time()
+        group_id = request.form.get("group") # if empty is None
+
+        # Update DDBB
+        new_event = Events(title=title, description=description, date=date, start_time=start_time, end_time=end_time, group_id=group_id)
+        # Add the event to the database
+        db.session.add(new_event)
+        db.session.commit()
+
+        return redirect("/")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -97,9 +137,8 @@ def register():
 
         # Query database for username
         rows = Users.query.filter_by(username=request.form.get("username")).first()
-
-        # Ensure username does not exist:
-        if rows == None:
+ 
+        if rows == None: # Ensure username does not exist
             # Create a new user
             new_user = Users(name=request.form.get("name"), surname=request.form.get("surname"), username=request.form.get("username"), hash=generate_password_hash(request.form.get("password")))
 

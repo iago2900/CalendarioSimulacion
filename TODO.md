@@ -1,9 +1,20 @@
-# Register / Login (NOW)
+# SHOW EVENTS IN INDEX PAGE
 
-* Add name and surname fields
-* write page navigation
-* Check from Finance
-* https://flask-login.readthedocs.io/en/latest/
+* improve card style
+* show more button to display attendants list
+* attend button to add user to list
+* order by date (most recent ones before)
+* hide old ones (date has passed)
+* implement search bar
+* assign colors to groups
+
+# CREATE EVENT FORM
+
+* Implement mandatory fields logic
+
+# Register / Login
+
+* Implement flask_login?? https://flask-login.readthedocs.io/en/latest/
 
 # Calendar (for later improvements)
 
