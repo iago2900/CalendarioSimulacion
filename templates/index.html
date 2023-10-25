@@ -12,39 +12,28 @@
                         <p class="card-text">Group: {% if event.group %}{{ event.group.name }}{% else %}All{% endif %}</p>
                         <p class="card-text">Date: {{ event.date }}</p>
                         <p class="card-text">Time: {{ event.start_time }} - {{ event.end_time }}</p>
-                        <button class="btn btn-primary show-more" data-toggle="modal" data-target="#exampleModal">Show More</button>
-                        <!-- Modal 
-                        <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered" role="document">
-                            <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                ...
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                <button type="button" class="btn btn-primary">Save changes</button>
-                            </div>
-                            </div>
-                        </div>
-                        </div>-->
+                        <button class="btn btn-primary show-more" data-toggle="modal" data-target="#modal_{{ event.id }}">Show More</button>
+
                         <!-- Modal -->
-                        <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                        <div class="modal fade" id="modal_{{ event.id }}" tabindex="-1" role="dialog" aria-labelledby="ModalLabel_{{ event.id }}" aria-hidden="true">
                             <div class="modal-dialog" role="document">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="exampleModalLabel">{{ event.title }}</h5>
+                                        <h5 class="modal-title" id="ModalLabel_{{ event.id }}">{{ event.title }}</h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                             <span aria-hidden="true">&times;</span>
                                         </button>
                                     </div>
                                     <div class="modal-body">
-                                        {{ event.description }}
+                                        <p style="text-align: justify;">Description: {{ event.description }}</p>
+                                        <p style="text-align: justify;">Maximum number of assistants: {{ event.n_assistants }}</p>
+
+                                        <!-- Show list of participants -->
+                                        <div style="text-align: justify;" id="lista-participantes_{{ event.id }}"></div>
+
+                                        <button class="btn btn-success" id="add_{{ event.id }}">Add Me to Event</button>
+                                        <button class="btn btn-danger" id="delete_{{ event.id }}">Delete from event</button>
+
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -56,15 +45,134 @@
                     </div>
                 </div>
             </div>
+            <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+            <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+            <script>
+                $(document).ready(function(){
+                    const user_id = "{{ user_id }}";
+                    const event_id = "{{ event.id }}"; 
+                    const max_participantes = "{{ event.n_assistants }}";
+
+                    // Función para obtener número de participantes apuntados
+                    function obtenerNumeroParticipantes(event_id) {
+                        return fetch(`/obtener_participantes/${event_id}`)
+                            .then(response => response.json())
+                            .then(participantes => participantes.length)
+                            .catch(error => console.error('Error:', error));
+                    }
+
+                    // Función para saber si el usuario está apuntado al evento
+                    function obtenerEstadoParticipacion(event_id, user_id) {
+                        return fetch(`/obtener_estado_participacion/${event_id}/${user_id}`)
+                            .then(response => response.json())
+                            .then(data => data.participa)
+                            .catch(error => console.error('Error:', error));
+                        }
+
+                        function actualizarEstadoBotones() {
+                            obtenerNumeroParticipantes(event_id)
+                                .then(numero_participantes => {
+                                    if (numero_participantes >= max_participantes) {
+                                        $('#add_{{ event.id }}').hide(); 
+                                    } else {
+                                        $('#add_{{ event.id }}').show(); 
+                                    }
+
+                                    obtenerEstadoParticipacion(event_id, user_id)
+                                        .then(participa => {
+                                            if (participa) {
+                                                $('#add_{{ event.id }}').hide();
+                                                $('#delete_{{ event.id }}').show();
+                                            } else {
+                                                $('#delete_{{ event.id }}').hide();
+                                            }
+                                        });
+                                });
+                        }
+
+                    // Llamada inicial para actualizar el estado del botón al cargar la página
+                    actualizarEstadoBotones();
+
+                    // Función para actualizar la lista de participantes
+                    function actualizarListaParticipantes(event_id) {
+                        // Realizar solicitud para obtener la lista de participantes
+                        fetch(`/obtener_participantes/${event_id}`)
+                            .then(response => response.json())
+                            .then(participantes => {
+                                const listaParticipantes = document.getElementById('lista-participantes_{{ event.id }}');
+                                const participantesHtml = participantes.map(participante => `<li>${participante.nombre}</li>`).join('');
+                                listaParticipantes.innerHTML = participantesHtml;
+                                console.log(participantes);
+                            })
+                            .catch(error => console.error('Error:', error));
+                    }
+
+                    // Llamar a la función para actualizar la lista de participantes
+                    actualizarListaParticipantes(event_id);
+
+                    $('#add_{{ event.id }}').click(function(){
+                        obtenerNumeroParticipantes(event_id)
+                        .then(numero_participantes => {
+                            if (numero_participantes < max_participantes) {
+                                // Realiza la solicitud POST
+                                fetch('/add_user_event', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        user_id: user_id,
+                                        event_id: event_id,
+                                    }),
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log('Respuesta del servidor:', data);
+                                    actualizarListaParticipantes(event_id);
+                                    actualizarEstadoBotones();
+                                })
+                                .catch((error) => {
+                                    console.error('Error:', error);
+                                });
+                            } else {
+                                alert('El evento ya tiene el número máximo de participantes');
+                            }
+                        });
+                    });
+                
+                    $('#delete_{{ event.id }}').click(function(){
+
+                        // Realiza la solicitud DELETE
+                        fetch('/delete_user_event', {
+                            method: 'DELETE',
+                            headers: {
+                            'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                            user_id: user_id,
+                            event_id: event_id,
+                            }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Respuesta del servidor:', data);
+                            actualizarListaParticipantes(event_id);
+                            actualizarEstadoBotones();
+                        })
+                        .catch((error) => {
+                            console.error('Error:', error);
+                        });
+
+                    });
+
+                });
+            </script>
         {% endfor %}
     </div>
 </div>
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<script>
-$('#myModal').on('shown.bs.modal', function () {
-  $('#myInput').trigger('focus')
-})
-</script>
+
+
+
+    
 {% endblock %}

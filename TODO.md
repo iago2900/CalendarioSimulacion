@@ -1,8 +1,6 @@
 # SHOW EVENTS IN INDEX PAGE
 
 * improve card style
-* show more button to display attendants list
-* attend button to add user to list
 * order by date (most recent ones before)
 * hide old ones (date has passed)
 * implement search bar
