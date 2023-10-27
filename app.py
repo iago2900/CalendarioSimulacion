@@ -120,6 +120,52 @@ def obtener_estado_participacion(event_id, user_id):
     user_event = UserEvents.query.filter_by(event_id=event_id, user_id=user_id).first()
     return jsonify({'participa': user_event is not None})
 
+@app.route("/create-group", methods=["GET", "POST"])
+@login_required
+def create_group():
+    if request.method == "GET":
+        return render_template("create_group.html")
+    else:
+        if not request.form.get("name"):
+            return apology("must provide a group name", 403)
+        
+        name = request.form.get("name")
+
+        new_group = Groups(name=name)
+        db.session.add(new_group)
+        db.session.commit()
+
+        return redirect("/")
+
+@app.route("/assign-roles", methods=["GET", "POST"])
+@login_required
+def assign_roles():
+    if request.method == "GET":
+        users = [(user.id, user.name, user.surname) for user in Users.query.all()]
+        roles = [(role.id, role.role) for role in Roles.query.all()]
+
+        return render_template("assign_roles.html", users=users, roles=roles)
+    else:
+        if not request.form.get("username"):
+            return apology("must provide username", 403)
+        elif not request.form.get("role"):
+            return apology("must provide role", 403)
+        
+        user_id = request.form.get("username")
+        role_id = request.form.get("role")
+
+        # Find the user
+        user = Users.query.filter_by(id=user_id).first()
+
+        if not user:
+            return apology("user not found", 403)
+        
+        # Update the role_id
+        user.role_id = role_id
+        db.session.commit()
+
+        return redirect("/")
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -197,7 +243,7 @@ def register():
  
         if rows == None: # Ensure username does not exist
             # Create a new user
-            new_user = Users(name=request.form.get("name"), surname=request.form.get("surname"), username=request.form.get("username"), hash=generate_password_hash(request.form.get("password")))
+            new_user = Users(name=request.form.get("name"), surname=request.form.get("surname"), username=request.form.get("username"), hash=generate_password_hash(request.form.get("password")), role_id=3) # Role is user by default
 
             # Add the user to the database
             db.session.add(new_user)

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Create group
+{% endblock %}
+
+{% block main %}
+
+<!--By default all users have role user.-->
+
+<form action="/assign-roles" method="post">
+    <div class="mb-3">
+        <label for="username">Username:</label>
+        <select class="form-control form-select mx-auto w-auto" id="username" name="username">
+            <option value="none" class="italic" disabled selected><i>Select a user</i></option>
+            {% for id, name, surname in users %}
+            <option value="{{id}}">{{name}} {{surname}}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="role">Role:</label>
+        <select class="form-control form-select mx-auto w-auto" id="role" name="role">
+            <option value="none" class="italic" disabled selected><i>Select a role</i></option>
+            {% for id, role in roles %}
+            <option value="{{id}}">{{role}}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Assign Role</button>
+</form>
+
+{% endblock %}
+
+

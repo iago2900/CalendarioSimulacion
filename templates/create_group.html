@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Create group
+{% endblock %}
+
+{% block main %}
+
+<!-- Future: Add table that shows all existing groups -->
+
+<form action="/create-group" method="post">
+    <div class="mb-3">
+        <label for="name">Group name:</label>
+        <input autocomplete="off" class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text">
+    </div>
+    <button class="btn btn-primary" type="submit">Create Group</button>
+</form>
+{% endblock %}
+
+

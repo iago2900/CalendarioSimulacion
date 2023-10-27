@@ -39,7 +39,7 @@
     <div class="row mb-3">
         <label for="group" class="col-sm-2 col-form-label">Group:</label>
         <div class="col-sm-10">
-            <select class="form-control" id="group" name="group">
+            <select class="form-control form-select" id="group" name="group">
                 <option value="none" class="italic" disabled selected><i>Select a group</i></option>
                 {% for id, name in groups %}
                 <option value="{{id}}">{{name}}</option>

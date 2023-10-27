@@ -32,6 +32,8 @@
                     {% if session["user_id"] %}
                         <ul class="navbar-nav me-auto mt-2">
                             <li class="nav-item"><a class="nav-link" href="/create-event">Create Event</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/create-group">Create Group</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/assign-roles">Assign Roles</a></li>
                         </ul>
                         <ul class="navbar-nav ms-auto mt-2">
                             <li class="nav-item"><a class="nav-link" href="/password">Change Password</a></li>
@@ -60,7 +62,7 @@
             {% block main %}{% endblock %}
         </main>
 
-        <footer class="mb-5 small text-center text-muted">
+        <footer class="mb-5 small text-center text-muted fixed-bottom">
             INSERT FOOTER
         </footer>
 
