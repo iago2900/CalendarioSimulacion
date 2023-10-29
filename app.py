@@ -263,7 +263,8 @@ def register():
  
         if rows == None: # Ensure username does not exist
             # Create a new user
-            new_user = Users(name=request.form.get("name"), surname=request.form.get("surname"), username=request.form.get("username"), hash=generate_password_hash(request.form.get("password")), role_id=3) # Role is user by default
+            role = Roles.query.filter_by(role=request.form.get("role")).first()
+            new_user = Users(name=request.form.get("name"), surname=request.form.get("surname"), username=request.form.get("username"), hash=generate_password_hash(request.form.get("password")), role_id=role.id)
 
             # Add the user to the database
             db_session.add(new_user)
