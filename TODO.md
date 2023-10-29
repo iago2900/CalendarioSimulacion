@@ -4,6 +4,8 @@
 
 * assign group to user when registered
 
+* admin submenu (js)
+
 # SHOW EVENTS IN INDEX PAGE
 
 * improve card style

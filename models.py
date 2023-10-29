@@ -1,49 +1,55 @@
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Boolean, Column, Integer, String, ForeignKey, Date, Time
+from sqlalchemy.orm import relationship, backref
+from database import Base
 
-db = SQLAlchemy()
+class Roles(Base):
+    __tablename__ = "roles"
+    id = Column(Integer, primary_key=True)
+    role = Column(String(255), nullable=False)
 
-class Roles(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    role = db.Column(db.String(255), nullable=False)
+class Users(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    surname = Column(String(255), nullable=False)
+    username = Column(String(255), nullable=False, unique=True)
+    hash = Column(String(255), nullable=False)
+    role_id = Column(Integer, ForeignKey('roles.id'))
+    group_id = Column(Integer, ForeignKey('groups.id'))
+    role = relationship('Roles', backref=backref('users', lazy=True))
+    group = relationship('Groups', backref=backref('users', lazy=True))
 
-class Users(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
-    surname = db.Column(db.String(255), nullable=False)
-    username = db.Column(db.String(255), nullable=False, unique=True)
-    hash = db.Column(db.String(255), nullable=False)
-    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
-    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
-    role = db.relationship('Roles', backref=db.backref('users', lazy=True))
-    group = db.relationship('Groups', backref=db.backref('users', lazy=True))
+class Groups(Base):
+    __tablename__ = "groups"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
 
-
-class Logs(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    action = db.Column(db.String(255), nullable=False)
-    timestamp = db.Column(db.DateTime, nullable=False)
-    event_id = db.Column(db.Integer, db.ForeignKey('events.id'))
-    event = db.relationship('Events', backref=db.backref('logs', lazy=True))
-
-class Groups(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
-
-class Events(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), nullable=False)
-    description = db.Column(db.String(255), nullable=True) 
-    date = db.Column(db.Date, nullable=False)
-    start_time = db.Column(db.Time, nullable=False) 
-    end_time = db.Column(db.Time, nullable=False)
-    n_assistants = db.Column(db.Integer, nullable=False) # max asistants to event
-    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True)
-    group = db.relationship('Groups', backref=db.backref('events', lazy=True))
+class Events(Base):
+    __tablename__ = "events"
+    id = Column(Integer, primary_key=True)
+    title = Column(String(255), nullable=False)
+    description = Column(String(255), nullable=True) 
+    date = Column(Date, nullable=False)
+    start_time = Column(Time, nullable=False) 
+    end_time = Column(Time, nullable=False)
+    n_assistants = Column(Integer, nullable=False) # max asistants to event
+    group_id = Column(Integer, ForeignKey('groups.id'), nullable=True)
+    group = relationship('Groups', backref=backref('events', lazy=True))
 
 # Many to many relation table
-class UserEvents(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=False)
-    user = db.relationship('Users', backref=db.backref('userevents', lazy=True))
-    event = db.relationship('Events', backref=db.backref('userevents', lazy=True))
+class UserEvents(Base):
+    __tablename__ = "userevents"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    event_id = Column(Integer, ForeignKey('events.id'), nullable=False)
+    user = relationship('Users', backref=backref('userevents', lazy=True))
+    event = relationship('Events', backref=backref('userevents', lazy=True))
+
+# Many to many relation table
+class UserGroups(Base):
+    __tablename__ = "usergroups"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    group_id = Column(Integer, ForeignKey('groups.id'), nullable=False)
+    user = relationship('Users', backref=backref('usergroups', lazy=True))
+    event = relationship('Groups', backref=backref('usergroups', lazy=True))

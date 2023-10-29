@@ -3,4 +3,3 @@ numpy
 Flask-Session
 requests
 Flask-SQLAlchemy
-flask_login

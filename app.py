@@ -4,18 +4,35 @@ from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 
-from models import db, Users, Roles, Logs, Groups, Events, UserEvents
-from helpers import login_required, apology
+from models import Users, Roles, Groups, Events, UserEvents
+from helpers import login_required, apology, permission_admin
+from database import db_session, init_db
 
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///SIMRadar.db'
+# manage sessions per request - make sure connections are closed and returned
+app.teardown_appcontext(lambda exc: db_session.close())
+
 Session(app)
 
-db.init_app(app)
-
+with app.app_context():
+    init_db()
+    # Check if roles already exist
+    existing_roles = Roles.query.all()
+    if not existing_roles:
+        roles = ['admin', 'user']
+        for role in roles:
+            new_role = Roles(role=role)
+            db_session.add(new_role)
+        db_session.commit()
+    # Check if user already exist
+    existing_user = Users.query.all()
+    if not existing_user:
+        new_user = Users(name="test", surname="test", username="test", hash=generate_password_hash("test"), role_id=1)
+        db_session.add(new_user)
+        db_session.commit()
 
 @app.route("/", methods=['GET'])
 @login_required
@@ -29,6 +46,7 @@ def index():
 
 @app.route("/create-event", methods=["GET", "POST"])
 @login_required
+@permission_admin
 def create_event():
     """
     Form to create new event.
@@ -64,8 +82,8 @@ def create_event():
         # Update DDBB
         new_event = Events(title=title, description=description, date=date, start_time=start_time, end_time=end_time, group_id=group_id, n_assistants=n_assistants)
         # Add the event to the database
-        db.session.add(new_event)
-        db.session.commit()
+        db_session.add(new_event)
+        db_session.commit()
 
         return redirect("/")
 
@@ -84,8 +102,8 @@ def add_user_event():
         return jsonify({"message": "El log ya existe"})
     
     new_user_event = UserEvents(user_id=user_id, event_id=event_id)
-    db.session.add(new_user_event)
-    db.session.commit()
+    db_session.add(new_user_event)
+    db_session.commit()
     
     return jsonify({"message": "Evento de usuario agregado exitosamente"})
 
@@ -99,8 +117,8 @@ def delete_user_event():
     log_to_delete = UserEvents.query.filter_by(user_id=user_id, event_id=event_id).first()
     
     if log_to_delete:
-        db.session.delete(log_to_delete)
-        db.session.commit()
+        db_session.delete(log_to_delete)
+        db_session.commit()
         return jsonify({"message": "Log eliminado exitosamente"})
     else:
         return jsonify({"message": "No se encontró el log"})
@@ -109,7 +127,7 @@ def delete_user_event():
 @app.route('/obtener_participantes/<int:event_id>')
 @login_required
 def obtener_participantes(event_id):
-    participantes = db.session.query(Users).join(UserEvents).filter(UserEvents.event_id == event_id).all()
+    participantes = db_session.query(Users).join(UserEvents).filter(UserEvents.event_id == event_id).all()
 
     return jsonify([{'id': participante.id, 'nombre': participante.name} for participante in participantes])
 
@@ -122,6 +140,7 @@ def obtener_estado_participacion(event_id, user_id):
 
 @app.route("/create-group", methods=["GET", "POST"])
 @login_required
+@permission_admin
 def create_group():
     if request.method == "GET":
         return render_template("create_group.html")
@@ -132,13 +151,14 @@ def create_group():
         name = request.form.get("name")
 
         new_group = Groups(name=name)
-        db.session.add(new_group)
-        db.session.commit()
+        db_session.add(new_group)
+        db_session.commit()
 
         return redirect("/")
 
 @app.route("/assign-roles", methods=["GET", "POST"])
 @login_required
+@permission_admin
 def assign_roles():
     if request.method == "GET":
         users = [(user.id, user.name, user.surname) for user in Users.query.all()]
@@ -162,7 +182,7 @@ def assign_roles():
         
         # Update the role_id
         user.role_id = role_id
-        db.session.commit()
+        db_session.commit()
 
         return redirect("/")
 
@@ -246,8 +266,8 @@ def register():
             new_user = Users(name=request.form.get("name"), surname=request.form.get("surname"), username=request.form.get("username"), hash=generate_password_hash(request.form.get("password")), role_id=3) # Role is user by default
 
             # Add the user to the database
-            db.session.add(new_user)
-            db.session.commit()
+            db_session.add(new_user)
+            db_session.commit()
 
         else:
             return apology("username already exists", 400)
@@ -281,7 +301,7 @@ def password():
         user.hash = generate_password_hash(request.form.get("password"))
 
         # Commit the changes to the database
-        db.session.commit()
+        db_session.commit()
 
         # Redirect user to home page
         return redirect("/")
