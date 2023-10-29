@@ -21,3 +21,14 @@ nav .navbar-brand .green
 {
     color: #2e944b;
 }
+
+.italic {
+    font-style: italic;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px #537fbe; /* Adjust the values as needed */
+    background-color: #9dceff;
+}

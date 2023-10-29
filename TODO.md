@@ -1,24 +1,38 @@
-# Register / Login (NOW)
+# Now develop all funcionalities for all roles:
+* create group
+* assign roles
 
-* Add name and surname fields
-* write page navigation
-* Check from Finance
-* https://flask-login.readthedocs.io/en/latest/
+* assign group to user when registered
 
-# Calendar (for later improvements)
+# SHOW EVENTS IN INDEX PAGE
 
-* How to save events into DDBB
-* An event must have: 
-  * title
-  * description
-  * date
-  * number of participants
-  * list of the participants joined
-  * group of users that can see that event
+* improve card style
+* order by date (most recent ones before)
+* hide old ones (date has passed)
+* implement search bar
+* assign colors to groups -> in create group form (superadmin, admin)
 
 # Permissions / roles
 
-* Admin: can add events
+* Superadmin: assigns roles, creates roles
+* Admin: can add events, creates groups
 * User: can join an event
+
+# Front - db:
+(only accessible by superadmin??)
+* Create role page
+* Create group page
+* Assign role page (for superadmin)
+
+
+# CREATE EVENT FORM
+
+* Add * in mandatory fiels (so that users know)
+
+# Register / Login
+
+* Implement flask_login?? https://flask-login.readthedocs.io/en/latest/
+
+# Calendar (for later improvements)
 
 # Export

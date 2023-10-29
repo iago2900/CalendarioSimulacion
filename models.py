@@ -17,6 +17,7 @@ class Users(db.Model):
     role = db.relationship('Roles', backref=db.backref('users', lazy=True))
     group = db.relationship('Groups', backref=db.backref('users', lazy=True))
 
+
 class Logs(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     action = db.Column(db.String(255), nullable=False)
@@ -24,17 +25,25 @@ class Logs(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey('events.id'))
     event = db.relationship('Events', backref=db.backref('logs', lazy=True))
 
-class Activities(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), nullable=False)
-    date = db.Column(db.Date, nullable=False)
-
 class Groups(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    group_name = db.Column(db.String(255), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
 
 class Events(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
-    start_datetime = db.Column(db.DateTime, nullable=False)
-    end_datetime = db.Column(db.DateTime, nullable=False)
+    description = db.Column(db.String(255), nullable=True) 
+    date = db.Column(db.Date, nullable=False)
+    start_time = db.Column(db.Time, nullable=False) 
+    end_time = db.Column(db.Time, nullable=False)
+    n_assistants = db.Column(db.Integer, nullable=False) # max asistants to event
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True)
+    group = db.relationship('Groups', backref=db.backref('events', lazy=True))
+
+# Many to many relation table
+class UserEvents(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=False)
+    user = db.relationship('Users', backref=db.backref('userevents', lazy=True))
+    event = db.relationship('Events', backref=db.backref('userevents', lazy=True))

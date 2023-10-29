@@ -12,15 +12,15 @@
 ## Redo Database
 If a change to the Models has to be done you can upload again demo data through the following steps:
 - Delete de current database `SIMRadar.db`
-- Check if tables are in `create_db.py`
+- Check if tables are in `models.py`
 - Run `python create_db.py` to create new database
 
 ## DDBB current structure:
- * Users: id, name, surname, username, password_hashed, role_id (foreign key), group_id (foreign key)
+ * Users: id, name, surname, username, hash, role_id (foreign key), group_id (foreign key)
  * Roles: id, role
  * Logs: id, action, timestamp, event_id (foreign key)
- * Events: id, title, date, start_datetime, end_datetime, group_id (foreign key)
- * Groups: id, group
+ * Events: id, title, start_datetime, end_datetime, group_id (foreign key)
+ * Groups: id, name
 
 ## Stack
 - https://www.sqlalchemy.org/
