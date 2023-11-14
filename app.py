@@ -1,8 +1,10 @@
 import os
-from flask import Flask, flash, redirect, render_template, request, session, jsonify
+from flask import Flask, flash, redirect, render_template, request, session, jsonify, send_file
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
+import pandas as pd
+
 
 from models import Users, Roles, Groups, Events, UserEvents, UserGroups
 from helpers import login_required, apology, permission_admin
@@ -38,25 +40,49 @@ with app.app_context():
 @login_required
 def index():
     """
-    Show list of events with same group id as user or None group id.
+    Show list of future events with same group id as user or None group id.
     """
     user_id = session['user_id']
-    print(session)
 
     usergroups = UserGroups.query.filter_by(user_id=user_id).all()
     events = []
+    event_ids = set() # to avoid repetitions
     for usergroup in usergroups:
-        events_by_group = Events.query.filter_by(group_id=usergroup.group_id).all()
+        events_by_group = Events.query.filter(Events.group_id == usergroup.group_id, Events.date >= datetime.now().date()).all()
         for event in events_by_group:
-            events.append(event)
+            if event.id not in event_ids:
+                events.append(event)
+                event_ids.add(event.id)
 
-    for event in Events.query.filter_by(group_id=None):
-        events.append(event)
+    for event in Events.query.filter(Events.group_id == None, Events.date >= datetime.now().date()):
+        if event.id not in event_ids:
+            events.append(event)
+            event_ids.add(event.id)
     
 
     return render_template("index.html", events=events, user_id=user_id)
 
 
+@app.route('/export_participants/<int:event_id>')
+@login_required
+@permission_admin
+def export_participants(event_id):
+    # Logic to generate the Excel file
+    # Replace this with your own logic to generate the Excel file
+    # You can use libraries like pandas or openpyxl to create the Excel file
+    
+    # Assuming you have generated the Excel file and saved it as 'participants.xlsx'
+    participants = UserEvents.query.filter_by(event_id=event_id).join(Users).all()
+    
+    # Create a DataFrame with the participants' names
+    participants_df = pd.DataFrame([f"{participant.user.name} {participant.user.surname}" for participant in participants], columns=['Name'])
+    # Save the DataFrame as an Excel file
+    filename = f'participants_event_{event_id}.xlsx'
+    participants_df.to_excel(filename, index=False)
+    
+    return send_file(filename, as_attachment=True)
+
+    
 @app.route("/create-event", methods=["GET", "POST"])
 @login_required
 @permission_admin
@@ -144,7 +170,7 @@ def delete_user_event():
 def obtener_participantes(event_id):
     participantes = db_session.query(Users).join(UserEvents).filter(UserEvents.event_id == event_id).all()
 
-    return jsonify([{'id': participante.id, 'nombre': participante.name} for participante in participantes])
+    return jsonify([{'id': participante.id, 'nombre': participante.name, 'apellido': participante.surname} for participante in participantes])
 
 
 @app.route('/obtener_estado_participacion/<int:event_id>/<int:user_id>')
@@ -152,6 +178,7 @@ def obtener_participantes(event_id):
 def obtener_estado_participacion(event_id, user_id):
     user_event = UserEvents.query.filter_by(event_id=event_id, user_id=user_id).first()
     return jsonify({'participa': user_event is not None})
+
 
 @app.route("/create-group", methods=["GET", "POST"])
 @login_required
@@ -233,11 +260,35 @@ def delete_group():
 
     group_id = request.json.get('group_id')
     
+    # Delete the logs in UserGroups table that contain the group_id
+    UserGroups.query.filter_by(group_id=group_id).delete()
+    
     # Buscar el log en la base de datos
     group_to_delete = Groups.query.filter_by(id=group_id).first()
     
     if group_to_delete:
         db_session.delete(group_to_delete)
+        db_session.commit()
+
+        return jsonify({"message": "Log eliminado exitosamente"})
+    else:
+        return jsonify({"message": "No se encontró el log"})
+
+@app.route('/delete_event', methods=['DELETE'])
+@login_required
+@permission_admin
+def delete_event():
+
+    event_id = request.json.get('event_id')
+    
+    # Delete the logs in UserEvents table that contain the event_id
+    UserEvents.query.filter_by(event_id=event_id).delete()
+    
+    # Buscar el log en la base de datos
+    event_to_delete = Events.query.filter_by(id=event_id).first()
+    
+    if event_to_delete:
+        db_session.delete(event_to_delete)
         db_session.commit()
 
         return jsonify({"message": "Log eliminado exitosamente"})

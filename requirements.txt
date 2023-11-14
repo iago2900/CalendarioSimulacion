@@ -3,3 +3,5 @@ numpy
 Flask-Session
 requests
 Flask-SQLAlchemy
+openpyxl
+pandas
