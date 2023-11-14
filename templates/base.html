@@ -30,9 +30,16 @@
                 <div class="collapse navbar-collapse" id="navbar">
                     {% if session["user_id"] %}
                         <ul class="navbar-nav me-auto mt-2">
-                            <li class="nav-item"><a class="nav-link" href="/create-event">Create Event</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/create-group">Manage Groups</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/assign-roles">Assign Roles</a></li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Admin Settings
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                    <li><a class="dropdown-item" href="/create-event">Create Event</a></li>
+                                    <li><a class="dropdown-item" href="/create-group">Manage Groups</a></li>
+                                    <li><a class="dropdown-item" href="/assign-roles">Assign Roles</a></li>
+                                </ul>
+                            </li>
                         </ul>
                         <ul class="navbar-nav ms-auto mt-2">
                             <li class="nav-item"><a class="nav-link" href="/password">Change Password</a></li>
