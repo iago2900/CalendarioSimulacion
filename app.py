@@ -41,6 +41,7 @@ def index():
     Show list of events with same group id as user or None group id.
     """
     user_id = session['user_id']
+    print(session)
 
     usergroups = UserGroups.query.filter_by(user_id=user_id).all()
     events = []
@@ -300,6 +301,7 @@ def login():
 
         # Remember which user has logged in
         session["user_id"] = rows.id
+        session["role_id"] = rows.role_id
 
         # Redirect user to home page
         return redirect("/")
