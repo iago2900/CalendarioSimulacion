@@ -23,7 +23,7 @@ def permission_admin(f):
     def decorated_function(*args, **kwargs):
         user = Users.query.filter_by(id=session["user_id"]).first()
         if user.role_id != 1:
-            return apology("Access denied.")
+            return apology("Access denied.", 403)
         return f(*args, **kwargs)
     return decorated_function
 

@@ -15,9 +15,7 @@ class Users(Base):
     username = Column(String(255), nullable=False, unique=True)
     hash = Column(String(255), nullable=False)
     role_id = Column(Integer, ForeignKey('roles.id'))
-    group_id = Column(Integer, ForeignKey('groups.id'))
     role = relationship('Roles', backref=backref('users', lazy=True))
-    group = relationship('Groups', backref=backref('users', lazy=True))
 
 class Groups(Base):
     __tablename__ = "groups"
@@ -33,15 +31,15 @@ class Events(Base):
     start_time = Column(Time, nullable=False) 
     end_time = Column(Time, nullable=False)
     n_assistants = Column(Integer, nullable=False) # max asistants to event
-    group_id = Column(Integer, ForeignKey('groups.id'), nullable=True)
+    group_id = Column(Integer, ForeignKey('groups.id', ondelete='CASCADE'))
     group = relationship('Groups', backref=backref('events', lazy=True))
 
 # Many to many relation table
 class UserEvents(Base):
     __tablename__ = "userevents"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    event_id = Column(Integer, ForeignKey('events.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
+    event_id = Column(Integer, ForeignKey('events.id', ondelete='CASCADE'))
     user = relationship('Users', backref=backref('userevents', lazy=True))
     event = relationship('Events', backref=backref('userevents', lazy=True))
 
@@ -49,7 +47,7 @@ class UserEvents(Base):
 class UserGroups(Base):
     __tablename__ = "usergroups"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    group_id = Column(Integer, ForeignKey('groups.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
+    group_id = Column(Integer, ForeignKey('groups.id', ondelete='CASCADE'))
     user = relationship('Users', backref=backref('usergroups', lazy=True))
     event = relationship('Groups', backref=backref('usergroups', lazy=True))

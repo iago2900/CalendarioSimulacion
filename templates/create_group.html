@@ -1,20 +1,166 @@
 {% extends "base.html" %}
 
 {% block title %}
-    Create group
+    Manage groups
 {% endblock %}
 
 {% block main %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">Group Name</th>
+                        <th scope="col">Users</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group_user_data in groups_with_users %}
+                    <tr>
+                        <td>{{ group_user_data['group'].name }}</td>
+                        <td>
+                            <ul class="list-unstyled">
+                                {% for user in group_user_data['users'] %}
+                                <li style="text-align: justify; margin-left: 20px;">
+                                    {{ user.name }} {{ user.surname }}
+                                    <button class="btn btn-danger btn-sm delete-x" onclick="deleteUser('{{ user.id }}', '{{ group_user_data['group'].id }}')">X</button> <!-- This works -->
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td style="width: 30%;">
+                            <a class="btn btn-secondary" type="button" data-bs-toggle="modal" data-bs-target="#addUsersModal_{{ group_user_data['group'].id }}">Add Users</a>
+                            
+                            <!--Modal-->
+                            <div class="modal fade" tabindex="-1" id="addUsersModal_{{ group_user_data['group'].id }}" role="dialog" aria-labelledby="exampleModalLabel_{{ group_user_data['group'].id }}" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="exampleModalLabel_{{ group_user_data['group'].id }}">Add Users</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                            
+                                        <form action="/create-group" method="post">
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label for="name">Group name:</label>
+                                                    <input autocomplete="off" class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text" value="{{ group_user_data['group'].name }}" readonly>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label>Select Users:</label><br>
+                                                    {% for id, name, surname in all_users %}
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="checkbox" id="{{id}}" name="users[]" value="{{id}}">
+                                                        <label class="form-check-label" for="{{id}}">{{name}} {{surname}}</label>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button class="btn btn-primary" type="submit">Add Users</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--end modal-->
 
-<!-- Future: Add table that shows all existing groups -->
-
-<form action="/create-group" method="post">
-    <div class="mb-3">
-        <label for="name">Group name:</label>
-        <input autocomplete="off" class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text" required>
+                            <a class="btn btn-danger" type="button" onclick="deleteGroup('{{ group_user_data['group'].id }}')">Delete Group</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-    <button class="btn btn-primary" type="submit">Create Group</button>
-</form>
+</div>
+<a class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#createGroupModal">Create Group</a>
+
+<!--Modal-->
+<div class="modal fade" tabindex="-1" id="createGroupModal" role="dialog" aria-labelledby="createGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createGroupModalLabel">Create Group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/create-group" method="post">
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="name">Group name:</label>
+                    <input autocomplete="off" class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text" required>
+                </div>
+                <div class="mb-3">
+                    <label>Select Users:</label><br>
+                    {% for id, name, surname in all_users %}
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="{{id}}" name="users[]" value="{{id}}">
+                        <label class="form-check-label" for="{{id}}">{{name}} {{surname}}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn-primary" type="submit">Create Group</button>
+            </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+<!--end modal-->
+
+
+<script>
+    function deleteUser(user_id, group_id) {
+        // Realiza la solicitud DELETE
+        fetch('/delete_user_group', {
+            method: 'DELETE',
+            headers: {
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+            user_id: user_id,
+            group_id: group_id,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Respuesta del servidor:', data);
+            // Refresh the list of users inside the group
+            location.reload();
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
+    function deleteGroup(group_id) {
+        // Realiza la solicitud DELETE
+        fetch('/delete_group', {
+            method: 'DELETE',
+            headers: {
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+            group_id: group_id,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Respuesta del servidor:', data);
+            // Refresh the list of users inside the group
+            location.reload();
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+</script>
 {% endblock %}
-
-

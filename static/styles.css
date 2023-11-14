@@ -32,3 +32,25 @@ nav .navbar-brand .green
     box-shadow: 0 2px 4px #537fbe; /* Adjust the values as needed */
     background-color: #9dceff;
 }
+
+.delete-x {
+    float: right; 
+    height: 20px; 
+    width: 20px; 
+    padding: 0; 
+    border: none; 
+    background: none; 
+    color: red;
+}
+
+/* Improved table styles */
+.table {    
+    background-color: rgb(255, 255, 255);
+    color: rgba(0, 0, 0, 0.87);
+    transition: box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+    border-radius: 10px;
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 1px -1px, rgba(0, 0, 0, 0.14) 0px 1px 1px 0px, rgba(0, 0, 0, 0.12) 0px 1px 3px 0px;
+    width: 100%;
+    margin-bottom: 16px;
+    border-style:hidden;
+}

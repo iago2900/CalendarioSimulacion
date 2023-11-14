@@ -19,24 +19,6 @@
         </div>
     </div>
     <div class="row mb-3">
-        <label for="date" class="col-sm-2 col-form-label">Date:</label>
-        <div class="col-sm-10">
-            <input class="form-control" id="date" name="date" type="date" required>
-        </div>
-    </div>
-    <div class="row mb-3">
-        <label for="start_time" class="col-sm-2 col-form-label">Starting Time:</label>
-        <div class="col-sm-10">
-            <input class="form-control" id="start_time" name="start_time" type="time" required>
-        </div>
-    </div>
-    <div class="row mb-3">
-        <label for="end_time" class="col-sm-2 col-form-label">Ending Time:</label>
-        <div class="col-sm-10">
-            <input class="form-control" id="end_time" name="end_time" type="time" required>
-        </div>
-    </div>
-    <div class="row mb-3">
         <label for="group" class="col-sm-2 col-form-label">Group:</label>
         <div class="col-sm-10">
             <select class="form-control form-select" id="group" name="group">
@@ -53,11 +35,61 @@
             <input class="form-control" id="n_assistants" name="n_assistants" type="number" required>
         </div>
     </div>
+
+    <!-- Add multiple time slots -->
+    <div id="timeSlots">
+        <div class="row mb-3 time-slot">
+            <label class="col-sm-1 offset-sm-1 col-form-label">Date:</label>
+            <div class="col-sm-2">
+                <input class="form-control" name="dates[]" type="date" required>
+            </div>
+            <label class="col-sm-1 col-form-label">Starting Time:</label>
+            <div class="col-sm-2">
+                <input class="form-control" name="start_times[]" type="time" required>
+            </div>
+            <label class="col-sm-1 col-form-label">Ending Time:</label>
+            <div class="col-sm-2">
+                <input class="form-control" name="end_times[]" type="time" required>
+            </div>
+            <div class="col-sm-2">
+                <button type="button" class="btn btn-danger btn-remove-time-slot" onclick="removeTimeSlot(this)">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add button to add more time slots -->
+    <div class="row">
+        <div class="col-sm-8 offset-sm-2">
+            <button type="button" class="btn btn-secondary" id="addTimeSlot">Add Time Slot</button>
+        </div>
+    </div>
+
+<br>
     <div class="row">
         <div class="col-sm-8 offset-sm-2">
             <button class="btn btn-primary" type="submit">Create Event</button>
         </div>
     </div>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('addTimeSlot').addEventListener('click', function() {
+        var timeSlot = document.querySelector('.time-slot').cloneNode(true);
+        document.getElementById('timeSlots').appendChild(timeSlot);
+    });
+    
+    function removeTimeSlot(button) {
+        var timeSlot = button.parentElement.parentElement;
+        if (document.querySelectorAll('.time-slot').length > 1) {
+            timeSlot.remove();
+        } else {
+            alert("You can't remove the last time slot.");
+        }
+    }
+    
+    window.removeTimeSlot = removeTimeSlot;
+});
+</script>
 
 {% endblock %}

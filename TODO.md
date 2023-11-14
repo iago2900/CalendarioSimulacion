@@ -1,13 +1,20 @@
-# Now:
-* create group: also assign users to that group (if group is already created, just add udpate the users group list)
-* admin submenu (js)
+# Index:
 * order by date (most recent ones before)
-* hide old ones (date has passed)
+* hide old ones (date has passed) *
+* admin submenu (js) *
 * implement search bar
-* assign colors to event creation
 * Add * in mandatory fiels (so that users know)
 * Export: button at card (only for admins)
+
+# Create event: 
+* add card color 
 
 # Register / Login
 
 * Implement flask_login?? https://flask-login.readthedocs.io/en/latest/
+
+
+# FIXES:
+* improve js index.html
+* Event model to bootstrap 5.1 (data-bs-toggle data-bs-target and more things) --> jquery related (read docs)
+* Deal Null values in DB when deleting entities

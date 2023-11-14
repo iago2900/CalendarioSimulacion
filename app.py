@@ -4,7 +4,7 @@ from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 
-from models import Users, Roles, Groups, Events, UserEvents
+from models import Users, Roles, Groups, Events, UserEvents, UserGroups
 from helpers import login_required, apology, permission_admin
 from database import db_session, init_db
 
@@ -37,9 +37,21 @@ with app.app_context():
 @app.route("/", methods=['GET'])
 @login_required
 def index():
-    """Show list of events"""
-    events = [event for event in Events.query.all()]
+    """
+    Show list of events with same group id as user or None group id.
+    """
     user_id = session['user_id']
+
+    usergroups = UserGroups.query.filter_by(user_id=user_id).all()
+    events = []
+    for usergroup in usergroups:
+        events_by_group = Events.query.filter_by(group_id=usergroup.group_id).all()
+        for event in events_by_group:
+            events.append(event)
+
+    for event in Events.query.filter_by(group_id=None):
+        events.append(event)
+    
 
     return render_template("index.html", events=events, user_id=user_id)
 
@@ -61,11 +73,11 @@ def create_event():
         # Ensure mandatory fields are submitted
         if not request.form.get("title"):
             return apology("must provide title", 403)
-        elif not request.form.get("date"):
+        elif not request.form.get("dates[]"):
             return apology("must provide date", 403)
-        elif not request.form.get("start_time"):
+        elif not request.form.get("start_times[]"):
             return apology("must provide start time", 403)
-        elif not request.form.get("end_time"):
+        elif not request.form.get("end_times[]"):
             return apology("must provide end time", 403)
         elif not request.form.get("n_assistants"):
             return apology("must provide number of assistants", 403)
@@ -73,17 +85,19 @@ def create_event():
         # Get data from new event
         title = request.form.get("title")
         description = request.form.get("description") # if empty is ""
-        date = datetime.strptime(request.form.get("date"),'%Y-%m-%d').date()
-        start_time = datetime.strptime(request.form.get("start_time"), "%H:%M").time()
-        end_time = datetime.strptime(request.form.get("end_time"), "%H:%M").time()
         group_id = request.form.get("group") # if empty is None
         n_assistants = request.form.get("n_assistants")
 
-        # Update DDBB
-        new_event = Events(title=title, description=description, date=date, start_time=start_time, end_time=end_time, group_id=group_id, n_assistants=n_assistants)
-        # Add the event to the database
-        db_session.add(new_event)
-        db_session.commit()
+        for date, start_time, end_time in zip(request.form.getlist("dates[]"), request.form.getlist("start_times[]"), request.form.getlist("end_times[]")):
+            date = datetime.strptime(date,'%Y-%m-%d').date()
+            start_time = datetime.strptime(start_time, "%H:%M").time()
+            end_time = datetime.strptime(end_time, "%H:%M").time()
+
+            # Update DDBB
+            new_event = Events(title=title, description=description, date=date, start_time=start_time, end_time=end_time, group_id=group_id, n_assistants=n_assistants)
+            # Add the event to the database
+            db_session.add(new_event)
+            db_session.commit()
 
         return redirect("/")
 
@@ -143,18 +157,91 @@ def obtener_estado_participacion(event_id, user_id):
 @permission_admin
 def create_group():
     if request.method == "GET":
-        return render_template("create_group.html")
-    else:
+        all_users = [(user.id, user.name, user.surname) for user in Users.query.all()]
+
+        groups = Groups.query.all()
+        groups_with_users = []
+
+        for group in groups:
+            usergroups = UserGroups.query.filter_by(group_id=group.id).all()
+            users = []
+            
+            for usergroup in usergroups:
+                user = Users.query.filter_by(id=usergroup.user_id).first()
+                users.append(user)
+            groups_with_users.append({'group': group, 'users': users})
+        return render_template("create_group.html", all_users=all_users, groups_with_users=groups_with_users)
+    
+    else: #post
         if not request.form.get("name"):
             return apology("must provide a group name", 403)
         
-        name = request.form.get("name")
+        existing_group = Groups.query.filter_by(name=request.form.get("name")).first()
+        if existing_group:
+            group_id = existing_group.id
 
-        new_group = Groups(name=name)
-        db_session.add(new_group)
+            # Get the list of selected users
+            selected_users = request.form.getlist('users[]')
+
+            # Create UserGroup log for each user added
+            for user_id in selected_users:
+                user_group_log = UserGroups(user_id=user_id, group_id=group_id)
+                db_session.add(user_group_log)
+                db_session.commit()
+        
+        else:
+            name = request.form.get("name")
+            new_group = Groups(name=name)
+            db_session.add(new_group)
+            db_session.commit()
+
+            group_id = new_group.id
+
+            # Get the list of selected users
+            selected_users = request.form.getlist('users[]')
+
+            # Create UserGroup log for each user added
+            for user_id in selected_users:
+                user_group_log = UserGroups(user_id=user_id, group_id=group_id)
+                db_session.add(user_group_log)
+                db_session.commit()
+
+        return redirect("/create-group")
+
+@app.route('/delete_user_group', methods=['DELETE'])
+@login_required
+@permission_admin
+def delete_user_group():
+    user_id = request.json.get('user_id')  
+    group_id = request.json.get('group_id')
+    
+    # Buscar el log en la base de datos
+    log_to_delete = UserGroups.query.filter_by(user_id=user_id, group_id=group_id).first()
+    
+    if log_to_delete:
+        db_session.delete(log_to_delete)
+        db_session.commit()
+        return jsonify({"message": "Log eliminado exitosamente"})
+    else:
+        return jsonify({"message": "No se encontró el log"})
+
+@app.route('/delete_group', methods=['DELETE'])
+@login_required
+@permission_admin
+def delete_group():
+
+    group_id = request.json.get('group_id')
+    
+    # Buscar el log en la base de datos
+    group_to_delete = Groups.query.filter_by(id=group_id).first()
+    
+    if group_to_delete:
+        db_session.delete(group_to_delete)
         db_session.commit()
 
-        return redirect("/")
+        return jsonify({"message": "Log eliminado exitosamente"})
+    else:
+        return jsonify({"message": "No se encontró el log"})
 
 @app.route("/assign-roles", methods=["GET", "POST"])
 @login_required
