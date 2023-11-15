@@ -1,18 +1,18 @@
 // FUNCTIONS FOR INDEX
 
-// Función para obtener número de participantes apuntados
-function obtenerNumeroParticipantes(event_id) {
-    return fetch(`/obtener_participantes/${event_id}`)
+// Function to get the number of registered participants
+function getNumberOfParticipants(event_id) {
+    return fetch(`/get_participants/${event_id}`)
         .then(response => response.json())
-        .then(participantes => participantes.length)
+        .then(participants => participants.length)
         .catch(error => console.error('Error:', error));
 }
 
-// Función para saber si el usuario está apuntado al evento
-function obtenerEstadoParticipacion(event_id, user_id) {
-    return fetch(`/obtener_estado_participacion/${event_id}/${user_id}`)
+// Function to check if the user is registered for the event
+function getParticipationStatus(event_id, user_id) {
+    return fetch(`/get_participation_status/${event_id}/${user_id}`)
         .then(response => response.json())
-        .then(data => data.participa)
+        .then(data => data.participates)
         .catch(error => console.error('Error:', error));
 }
 
@@ -35,7 +35,7 @@ function exportParticipants(event_id) {
 }
 
 function deleteUserEvent(event_id, user_id) {
-    // Realiza la solicitud DELETE
+    // Send a DELETE request
     fetch('/delete_user_event', {
         method: 'DELETE',
         headers: {
@@ -48,7 +48,7 @@ function deleteUserEvent(event_id, user_id) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Respuesta del servidor:', data);
+        console.log('Server response:', data);
         location.reload();
     })
     .catch((error) => {
@@ -56,11 +56,11 @@ function deleteUserEvent(event_id, user_id) {
     });
 }
 
-function addUserEvent(event_id, user_id, max_participantes) {
-    obtenerNumeroParticipantes(event_id)
-    .then(numero_participantes => {
-        if (numero_participantes < max_participantes) {
-            // Realiza la solicitud POST
+function addUserEvent(event_id, user_id, max_participants) {
+    getNumberOfParticipants(event_id)
+    .then(number_of_participants => {
+        if (number_of_participants < max_participants) {
+            // Send a POST request
             fetch('/add_user_event', {
                 method: 'POST',
                 headers: {
@@ -73,83 +73,89 @@ function addUserEvent(event_id, user_id, max_participantes) {
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Respuesta del servidor:', data);
+                console.log('Server response:', data);
                 location.reload();
             })
             .catch((error) => {
                 console.error('Error:', error);
             });
         } else {
-            alert('El evento ya tiene el número máximo de participantes');
+            alert('The event has reached the maximum number of participants');
         }
     });
 }
 
 function deleteEvent(event_id) {
-    // Realiza la solicitud DELETE
-    fetch('/delete_event', {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            event_id: event_id,
-        }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Respuesta del servidor:', data);
-        location.reload();
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
+    if (confirm('Are you sure you want to delete this event?')) {
+        // Send a DELETE request
+        fetch('/delete_event', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                event_id: event_id,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Server response:', data);
+            location.reload();
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
 }
 
 
 // FUNCTIONS FOR MANAGE GROUPS
 
 function deleteUser(user_id, group_id) {
-    // Realiza la solicitud DELETE
-    fetch('/delete_user_group', {
-        method: 'DELETE',
-        headers: {
-        'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-        user_id: user_id,
-        group_id: group_id,
-        }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Respuesta del servidor:', data);
-        // Refresh the list of users inside the group
-        location.reload();
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
+    if (confirm('Are you sure you want to remove this user from the group?')) {
+        // Send a DELETE request
+        fetch('/delete_user_group', {
+            method: 'DELETE',
+            headers: {
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+            user_id: user_id,
+            group_id: group_id,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Server response:', data);
+            // Refresh the list of users inside the group
+            location.reload();
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
 }
 
 function deleteGroup(group_id) {
-    // Realiza la solicitud DELETE
-    fetch('/delete_group', {
-        method: 'DELETE',
-        headers: {
-        'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-        group_id: group_id,
-        }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Respuesta del servidor:', data);
-        // Refresh the list of users inside the group
-        location.reload();
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
+    if (confirm('Are you sure you want to delete this group?')) {
+        // Send a DELETE request
+        fetch('/delete_group', {
+            method: 'DELETE',
+            headers: {
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+            group_id: group_id,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Server response:', data);
+            // Refresh the list of users inside the group
+            location.reload();
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
 }

@@ -165,25 +165,25 @@ def delete_user_event():
         return jsonify({"message": "No se encontró el log"})
 
 
-@app.route('/obtener_participantes/<int:event_id>')
+@app.route('/get_participants/<int:event_id>')
 @login_required
-def obtener_participantes(event_id):
-    participantes = db_session.query(Users).join(UserEvents).filter(UserEvents.event_id == event_id).all()
+def get_participants(event_id):
+    participants = db_session.query(Users).join(UserEvents).filter(UserEvents.event_id == event_id).all()
 
-    return jsonify([{'id': participante.id, 'nombre': participante.name, 'apellido': participante.surname} for participante in participantes])
+    return jsonify([{'id': participant.id, 'name': participant.name, 'surname': participant.surname} for participant in participants])
 
 
-@app.route('/obtener_estado_participacion/<int:event_id>/<int:user_id>')
+@app.route('/get_participation_status/<int:event_id>/<int:user_id>')
 @login_required
-def obtener_estado_participacion(event_id, user_id):
+def get_participation_status(event_id, user_id):
     user_event = UserEvents.query.filter_by(event_id=event_id, user_id=user_id).first()
-    return jsonify({'participa': user_event is not None})
+    return jsonify({'participates': user_event is not None})
 
 
-@app.route("/create-group", methods=["GET", "POST"])
+@app.route("/manage-groups", methods=["GET", "POST"])
 @login_required
 @permission_admin
-def create_group():
+def manage_groups():
     if request.method == "GET":
         all_users = [(user.id, user.name, user.surname) for user in Users.query.all()]
 
@@ -198,7 +198,7 @@ def create_group():
                 user = Users.query.filter_by(id=usergroup.user_id).first()
                 users.append(user)
             groups_with_users.append({'group': group, 'users': users})
-        return render_template("create_group.html", all_users=all_users, groups_with_users=groups_with_users)
+        return render_template("manage_groups.html", all_users=all_users, groups_with_users=groups_with_users)
     
     else: #post
         if not request.form.get("name"):
@@ -234,7 +234,7 @@ def create_group():
                 db_session.add(user_group_log)
                 db_session.commit()
 
-        return redirect("/create-group")
+        return redirect("/manage-groups")
 
 @app.route('/delete_user_group', methods=['DELETE'])
 @login_required
@@ -446,3 +446,4 @@ def password():
 
         # Redirect user to home page
         return redirect("/")
+

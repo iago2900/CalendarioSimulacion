@@ -37,7 +37,7 @@
                                         <p style="text-align: justify;">Maximum number of assistants: {{ event.n_assistants }}</p>
 
                                         <!-- Show list of participants -->
-                                        <div style="text-align: justify;" id="lista-participantes_{{ event.id }}"></div>
+                                        <div style="text-align: justify;" id="participant-list_{{ event.id }}"></div>
 
                                         <button class="btn btn-success" id="add_{{ event.id }}" onclick="addUserEvent('{{event.id}}', '{{ user_id }}', '{{ event.n_assistants }}')">Add Me to Event</button>
                                         <button class="btn btn-danger" id="delete_{{ event.id }}" onclick="deleteUserEvent('{{event.id}}', '{{ user_id }}')">Delete from event</button>
@@ -56,23 +56,23 @@
             </div>
             <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
             <script>
-                $(document).ready(function(){
+                $(document).ready(function() {
                     const user_id = "{{ user_id }}";
                     const event_id = "{{ event.id }}"; 
-                    const max_participantes = "{{ event.n_assistants }}";
+                    const max_participants = "{{ event.n_assistants }}";
 
-                    function actualizarEstadoBotones(event_id, user_id, max_participantes) {
-                        obtenerNumeroParticipantes(event_id)
-                        .then(numero_participantes => {
-                            if (numero_participantes >= max_participantes) {
+                    function updateButtonState(event_id, user_id, max_participants) {
+                        getNumberOfParticipants(event_id)
+                        .then(number_of_participants => {
+                            if (number_of_participants >= max_participants) {
                                 $('#add_{{ event.id }}').hide(); 
                             } else {
                                 $('#add_{{ event.id }}').show(); 
                             }
 
-                            obtenerEstadoParticipacion(event_id, user_id)
-                            .then(participa => {
-                                if (participa) {
+                            getParticipationStatus(event_id, user_id)
+                            .then(participates => {
+                                if (participates) {
                                     $('#add_{{ event.id }}').hide();
                                     $('#delete_{{ event.id }}').show();
                                 } else {
@@ -81,27 +81,27 @@
                             });
                         });
                     }
-                    // Llamada inicial para actualizar el estado del botón al cargar la página
-                    actualizarEstadoBotones(event_id, user_id, max_participantes);
+                    // Initial call to update the button state when the page loads
+                    updateButtonState(event_id, user_id, max_participants);
 
-                    // Función para actualizar la lista de participantes
-                    function actualizarListaParticipantes(event_id) {
-                        // Realizar solicitud para obtener la lista de participantes
-                        fetch(`/obtener_participantes/${event_id}`)
+                    // Function to update the participant list
+                    function updateParticipantList(event_id) {
+                        // Make a request to get the participant list
+                        fetch(`/get_participants/${event_id}`)
                             .then(response => response.json())
-                            .then(participantes => {
-                                const listaParticipantes = document.getElementById('lista-participantes_{{ event.id }}');
-                                const participantesHtml = participantes.map(participante => `<li>${participante.nombre} ${participante.apellido}</li>`).join('');
-                                listaParticipantes.innerHTML = participantesHtml;
-                                console.log(participantes);
+                            .then(participants => {
+                                const participantList = document.getElementById('participant-list_{{ event.id }}');
+                                const participantsHtml = participants.map(participant => `<li>${participant.name} ${participant.surname}</li>`).join('');
+                                participantList.innerHTML = participantsHtml;
+                                console.log(participants);
                             })
                             .catch(error => console.error('Error:', error));
                     }
-                    // Llamar a la función para actualizar la lista de participantes
-                    actualizarListaParticipantes(event_id);
+                    // Call the function to update the participant list
+                    updateParticipantList(event_id);
                 });
             </script>
         {% endfor %}
     </div>
-</div>    
+</div>
 {% endblock %}
