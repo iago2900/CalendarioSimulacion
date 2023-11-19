@@ -9,16 +9,16 @@
 7. Go to http://localhost:5000 
 
 ## DDBB current structure:
- * Users: id, name, surname, username, hash, role_id (foreign key), group_id (foreign key)
  * Roles: id, role
+ * Users: id, name, surname, username, hash, role_id (foreign key)
+* Groups: id, name
  * Events: id, title, description, date, start_time, end_time, n_assistants, group_id (foreign key)
- * Groups: id, name
  * UserEvents: id, user_id (foreign key), event_id (foreign key)
  * UserGroups: id, user_id (foreign key), group_id (foreign key)
 
 ## Stack
 - https://www.sqlalchemy.org/
-- https://flask.palletsprojects.com/en/2.0.x/
+- https://flask.palletsprojects.com/en/3.0.x/
 
 ## SQLite:
 To work with SQLITE [sqlite3](https://sqlite.org/index.html) can be used. 
