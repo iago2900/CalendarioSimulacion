@@ -23,8 +23,40 @@
         </div>
         {% endif %}
 
+        <!-- Modal for export button -->
+        <div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exportModalLabel">Export Events</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="/export_participants_by_title" method="POST">
+                    <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="eventTitle" class="form-label">Select Event Title</label>
+                                <select class="form-select" id="eventTitle" name="eventTitle">
+                                    <option value="none" class="italic" disabled selected><i>Select an event</i></option>
+                                    {% set event_titles = [] %} <!-- to avoid repeting titles -->
+                                    {% for e in events %}
+                                        {% if e.title not in event_titles %}
+                                            {% set _ = event_titles.append(e.title) %}
+                                            <option value="{{ e.title }}">{{ e.title }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-success">Export</button>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         <div class="col text-end" style="margin-bottom: 20px;">
-            <button class="btn btn-success" >Export</button>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exportModal">Export</button>
         </div>
     
     {% endif %}

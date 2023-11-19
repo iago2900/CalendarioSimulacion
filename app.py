@@ -83,7 +83,43 @@ def index_old():
     return render_template("index.html", events=old_events, user_id=user_id, button='old')
 
 
+@app.route('/export_participants_by_title', methods=['POST'])
+@login_required
+@permission_admin
+def export_participants_by_title():
+    '''
+    Export function that generates an excel with all the participants of an event.
+    '''
+    # if no title is sent
+    if not request.form.get('eventTitle'):
+        return apology('Must provide a title.')
 
+    title = request.form.get('eventTitle')
+    events_with_title = Events.query.filter_by(title=title).all()
+
+    
+    # Create a DataFrame with the participants' names for each event date and time
+    participants_data = {}
+    for event in events_with_title:
+        event_date = event.date.strftime('%Y-%m-%d')
+        event_time = f"{event.start_time} - {event.end_time}"
+        if (event_date, event_time) not in participants_data:
+            participants_data[(event_date, event_time)] = []
+        event_participants = UserEvents.query.filter_by(event_id=event.id).join(Users).all()
+        participants_data[(event_date, event_time)].extend([f"{participant.user.name} {participant.user.surname}" for participant in event_participants])
+    
+    # Manage the case where list of participants of each event do not have the same length
+    max_length = max(len(participants) for participants in participants_data.values())
+    for participants_list in participants_data.values():
+        while len(participants_list) < max_length:
+            participants_list.append('')
+    
+    # Create a DataFrame with the participants' names for each event date and time
+    participants_df = pd.DataFrame(participants_data)
+    filename = f'participants_{title}.xlsx'
+    participants_df.to_excel(filename)
+    
+    return send_file(filename, as_attachment=True)
 
 
 @app.route('/export_participants/<int:event_id>')
