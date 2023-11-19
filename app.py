@@ -32,7 +32,7 @@ with app.app_context():
     # Check if user already exist
     existing_user = Users.query.all()
     if not existing_user:
-        new_user = Users(name="test", surname="test", username="test", hash=generate_password_hash("test"), role_id=1)
+        new_user = Users(name="admin", surname="admin", username="admin", hash=generate_password_hash("admin"), role_id=1)
         db_session.add(new_user)
         db_session.commit()
 
@@ -43,7 +43,15 @@ def index():
     Show list of future events with same group id as user or None group id.
     """
     user_id = session['user_id']
+    role_id = session['role_id']
 
+    # if it is an admin, then show all active events, no matter the group
+    if role_id == 1:
+        # use this when the switch is active in index.html
+        active_events = [event for event in Events.query.filter(Events.date > datetime.now().date()).all()]
+
+        return render_template("index.html", events=active_events, user_id=user_id)
+        
     usergroups = UserGroups.query.filter_by(user_id=user_id).all()
     events = []
     event_ids = set() # to avoid repetitions
@@ -61,6 +69,21 @@ def index():
     
 
     return render_template("index.html", events=events, user_id=user_id)
+
+@app.route("/old-events", methods=['GET'])
+@login_required
+@permission_admin
+def index_old():
+    """
+    Show list of old events for admin.
+    """
+    user_id = session['user_id']
+    old_events = [event for event in Events.query.filter(Events.date <= datetime.now().date()).all()]
+
+    return render_template("index.html", events=old_events, user_id=user_id, button='old')
+
+
+
 
 
 @app.route('/export_participants/<int:event_id>')
@@ -399,19 +422,24 @@ def register():
             return apology("must confirm the password", 400)
 
         # Query database for username
-        rows = Users.query.filter_by(username=request.form.get("username")).first()
+        existing_user = Users.query.filter_by(name=request.form.get("name"), surname=request.form.get("surname")).first()
+
+        if existing_user is None: # Ensure name + surname do not exist
+            # Query database for username
+            rows = Users.query.filter_by(username=request.form.get("username")).first()
  
-        if rows == None: # Ensure username does not exist
-            # Create a new user
-            role = Roles.query.filter_by(role=request.form.get("role")).first()
-            new_user = Users(name=request.form.get("name"), surname=request.form.get("surname"), username=request.form.get("username"), hash=generate_password_hash(request.form.get("password")), role_id=role.id)
+            if rows is None: # Ensure username does not exist
+                # Create a new user (with role user by default)
+                new_user = Users(name=request.form.get("name"), surname=request.form.get("surname"), username=request.form.get("username"), hash=generate_password_hash(request.form.get("password")), role_id=2)
 
-            # Add the user to the database
-            db_session.add(new_user)
-            db_session.commit()
+                # Add the user to the database
+                db_session.add(new_user)
+                db_session.commit()
 
+            else:
+                return apology("username already exists", 400)
         else:
-            return apology("username already exists", 400)
+            return apology("name and surname already exist", 400)
 
 
         # Redirect user to home page

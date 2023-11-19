@@ -3,7 +3,36 @@
 
 {% block main %}
 <div class="container">
+        {% if session['role_id'] == 1 %}
+        <!-- If case to "checked" the right button -->
+        {% if button == 'old' %} 
+        <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+            <input type="radio" class="btn-check" name="btnradio" id="button_active_events" autocomplete="off">
+            <label class="btn btn-outline-primary" for="button_active_events">Active</label>
+        
+            <input type="radio" class="btn-check" name="btnradio" id="button_old_events" autocomplete="off" checked>
+            <label class="btn btn-outline-primary" for="button_old_events">Old</label>
+        </div>
+        {% else %}
+        <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+            <input type="radio" class="btn-check" name="btnradio" id="button_active_events" autocomplete="off" checked>
+            <label class="btn btn-outline-primary" for="button_active_events">Active</label>
+        
+            <input type="radio" class="btn-check" name="btnradio" id="button_old_events" autocomplete="off">
+            <label class="btn btn-outline-primary" for="button_old_events">Old</label>
+        </div>
+        {% endif %}
+
+        <div class="col text-end" style="margin-bottom: 20px;">
+            <button class="btn btn-success" >Export</button>
+        </div>
+    
+    {% endif %}
     <div class="row">
+        {% if not events %}
+            <p>No current events available</p>
+        {% endif %}
+
         {% for event in events %}
             <div class="col-md-4 mb-4">
                 <div class="card">
@@ -104,4 +133,18 @@
         {% endfor %}
     </div>
 </div>
+<script>
+    // Get the radio buttons
+    const activeButton = document.getElementById('button_active_events');
+    const oldButton = document.getElementById('button_old_events');
+
+    // Add click event listeners
+    activeButton.addEventListener('click', function() {
+        window.location.href = '/';
+    });
+
+    oldButton.addEventListener('click', function() {
+        window.location.href = '/old-events';
+    });
+</script>
 {% endblock %}

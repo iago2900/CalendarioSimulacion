@@ -159,3 +159,11 @@ function deleteGroup(group_id) {
         });
     }
 }
+
+function isButtonChecked(buttonId) {
+    const button = document.getElementById(buttonId);
+    if (button) {
+      return true;
+    }
+    return false; // Return false if the button with the given ID doesn't exist
+  }
