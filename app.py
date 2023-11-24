@@ -263,6 +263,8 @@ def manage_groups():
         if not request.form.get("name"):
             return apology("must provide a group name", 403)
         
+        users_excel = request.files["fileUpload"]
+        
         existing_group = Groups.query.filter_by(name=request.form.get("name")).first()
         if existing_group:
             group_id = existing_group.id
@@ -275,6 +277,31 @@ def manage_groups():
                 user_group_log = UserGroups(user_id=user_id, group_id=group_id)
                 db_session.add(user_group_log)
                 db_session.commit()
+
+            if users_excel:
+                users_df = pd.read_excel(users_excel)
+                for index, row in users_df.iterrows():
+                    name = row['Nom']
+                    surname = row['Primer cognom'] + ' ' + row['Segon cognom']
+                    username = row['Correu']
+                    hash = row['Nif']
+                    role_id = 1
+
+                    existing_user = Users.query.filter_by(username=username).first()
+                    # Check that the user is new
+                    if existing_user in None:
+                        new_user = Users(name=name, surname=surname, username=username, hash=generate_password_hash(hash), role_id=role_id)
+                        db_session.add(new_user)
+                        db_session.commit()
+                        user_group_log = UserGroups(user_id=new_user.id, group_id=group_id)
+                        db_session.add(user_group_log)
+                        db_session.commit()
+                    
+                    # Add the existing user to the group
+                    else:
+                        user_group_log = UserGroups(user_id=existing_user.id, group_id=group_id)
+                        db_session.add(user_group_log)
+                        db_session.commit()
         
         else:
             name = request.form.get("name")
@@ -292,6 +319,31 @@ def manage_groups():
                 user_group_log = UserGroups(user_id=user_id, group_id=group_id)
                 db_session.add(user_group_log)
                 db_session.commit()
+
+            if users_excel:
+                users_df = pd.read_excel(users_excel)
+                for index, row in users_df.iterrows():
+                    name = row['Nom']
+                    surname = row['Primer cognom'] + ' ' + row['Segon cognom']
+                    username = row['Correu']
+                    hash = row['Nif']
+                    role_id = 1
+
+                    existing_user = Users.query.filter_by(username=username).first()
+                    # Check that the user is new
+                    if existing_user is None:
+                        new_user = Users(name=name, surname=surname, username=username, hash=generate_password_hash(hash), role_id=role_id)
+                        db_session.add(new_user)
+                        db_session.commit()
+                        user_group_log = UserGroups(user_id=new_user.id, group_id=group_id)
+                        db_session.add(user_group_log)
+                        db_session.commit()
+                    
+                    # Add the existing user to the group
+                    else:
+                        user_group_log = UserGroups(user_id=existing_user.id, group_id=group_id)
+                        db_session.add(user_group_log)
+                        db_session.commit()
 
         return redirect("/manage-groups")
 
@@ -457,7 +509,7 @@ def register():
         elif not request.form.get("confirmation") or (request.form.get("confirmation") != request.form.get("password")):
             return apology("must confirm the password", 400)
 
-        # Query database for username
+        # Query database for name and surname
         existing_user = Users.query.filter_by(name=request.form.get("name"), surname=request.form.get("surname")).first()
 
         if existing_user is None: # Ensure name + surname do not exist
@@ -510,4 +562,3 @@ def password():
 
         # Redirect user to home page
         return redirect("/")
-

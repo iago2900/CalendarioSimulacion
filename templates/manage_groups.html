@@ -87,7 +87,7 @@
                 <h5 class="modal-title" id="createGroupModalLabel">Create Group</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="/manage-groups" method="post">
+            <form action="/manage-groups" method="post" enctype="multipart/form-data">
 
             <div class="modal-body">
                 <div class="mb-3">
@@ -95,6 +95,13 @@
                     <input autocomplete="off" class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text" required>
                 </div>
                 <div class="mb-3">
+                    <div class="mb-3">
+                        <label for="fileUpload">Upload Excel File:</label>
+                        <input type="file" id="fileUpload" name="fileUpload" accept=".xlsx, .xls">
+                    </div>
+
+                    <p>or</p>
+                    
                     <label>Select Users:</label><br>
                     {% for id, name, surname in all_users %}
                     <div class="form-check form-check-inline">
