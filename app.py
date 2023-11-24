@@ -244,7 +244,7 @@ def get_participation_status(event_id, user_id):
 @permission_admin
 def manage_groups():
     if request.method == "GET":
-        all_users = [(user.id, user.name, user.surname) for user in Users.query.all()]
+        all_users = [(user.id, user.name, user.surname, user.username) for user in Users.query.all()]
 
         groups = Groups.query.all()
         groups_with_users = []
@@ -346,6 +346,25 @@ def manage_groups():
                         db_session.commit()
 
         return redirect("/manage-groups")
+
+@app.route('/add-user-group', methods=['POST'])
+@login_required
+@permission_admin
+def add_user_group():
+    
+    group = Groups.query.filter_by(name=request.form.get("name")).first()
+    group_id = group.id
+
+    # Get the list of selected users
+    selected_users = request.form.getlist('users[]')
+
+    # Create UserGroup log for each user added
+    for user_id in selected_users:
+        user_group_log = UserGroups(user_id=user_id, group_id=group_id)
+        db_session.add(user_group_log)
+        db_session.commit()
+
+    return redirect("/manage-groups")
 
 @app.route('/delete_user_group', methods=['DELETE'])
 @login_required

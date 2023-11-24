@@ -24,7 +24,7 @@
                             <ul class="list-unstyled">
                                 {% for user in group_user_data['users'] %}
                                 <li style="text-align: justify; margin-left: 20px;">
-                                    {{ user.name }} {{ user.surname }}
+                                    {{ user.name }} {{ user.surname }} ({{ user.username }})
                                     <button class="btn btn-danger btn-sm delete-x" onclick="deleteUser('{{ user.id }}', '{{ group_user_data['group'].id }}')">X</button> <!-- This works -->
                                 </li>
                                 {% endfor %}
@@ -42,21 +42,30 @@
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                             
-                                        <form action="/manage-groups" method="post">
+                                        <form action="/add-user-group" method="post">
                                             <div class="modal-body">
                                                 <div class="mb-3">
                                                     <label for="name">Group name:</label>
                                                     <input autocomplete="off" class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text" value="{{ group_user_data['group'].name }}" readonly>
                                                 </div>
                                                 <div class="mb-3">
-                                                    <label>Select Users:</label><br>
-                                                    {% for id, name, surname in all_users %}
-                                                    <div class="form-check form-check-inline">
-                                                        <input class="form-check-input" type="checkbox" id="{{id}}" name="users[]" value="{{id}}">
-                                                        <label class="form-check-label" for="{{id}}">{{name}} {{surname}}</label>
-                                                    </div>
-                                                    {% endfor %}
+                                                    <label for="selectUsers_{{ group_user_data['group'].id }}">Select Users:</label><br>
+                                                    <select id="selectUsers_{{ group_user_data['group'].id }}" class="form-control" multiple="multiple" name="users[]">
+                                                        {% for id, name, surname, username in all_users %}
+                                                            <option value="{{id}}">{{name}} {{surname}} ({{ username }})</option>
+                                                        {% endfor %}
+                                                    </select>
                                                 </div>
+                                                <script>
+                                                    $(document).ready(function() {
+                                                        // Inicializa Select2 en el elemento select
+                                                        $('#selectUsers_{{ group_user_data['group'].id }}').select2({
+                                                            placeholder: 'Search for users...',
+                                                            width: '100%'
+                                                        });
+                                                    });
+                                                </script>
+
                                             </div>
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -101,14 +110,23 @@
                     </div>
 
                     <p>or</p>
-                    
-                    <label>Select Users:</label><br>
-                    {% for id, name, surname in all_users %}
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="{{id}}" name="users[]" value="{{id}}">
-                        <label class="form-check-label" for="{{id}}">{{name}} {{surname}}</label>
+                    <div class="mb-3">
+                        <label for="selectUsers2">Select Users:</label><br>
+                        <select id="selectUsers2" class="form-control" multiple="multiple" name="users[]">
+                            {% for id, name, surname, username in all_users %}
+                                <option value="{{id}}">{{name}} {{surname}} ({{ username }})</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    {% endfor %}
+                    <script>
+                        $(document).ready(function() {
+                            // Inicializa Select2 en el elemento select
+                            $('#selectUsers2').select2({
+                                placeholder: 'Search for users...',
+                                width: '100%'
+                            });
+                        });
+                    </script>
                 </div>
             </div>
             <div class="modal-footer">

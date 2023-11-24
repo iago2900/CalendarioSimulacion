@@ -54,3 +54,7 @@ nav .navbar-brand .green
     margin-bottom: 16px;
     border-style:hidden;
 }
+
+.select2-container {
+    z-index: 9999; /* or any high value to ensure it appears in front */
+}
