@@ -52,6 +52,7 @@ def index():
             events.append({
                 'title': event.title,
                 'groupId': event.group_id,
+                'groupName': Groups.query.filter_by(id=event.group_id).first().name if Groups.query.filter_by(id=event.group_id).first() else None,
                 'start': f"{event.date.strftime('%Y-%m-%d')} {event.start_time}",
                 'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
                 'modalId': event.id,
@@ -73,6 +74,7 @@ def index():
                     events.append({
                         'title': event.title,
                         'groupId': event.group_id,
+                        'groupName': Groups.query.filter_by(id=event.group_id).first().name if Groups.query.filter_by(id=event.group_id).first() else None,
                         'start': f"{event.date.strftime('%Y-%m-%d')} {event.start_time}",
                         'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
                         'modalId': event.id,
@@ -88,6 +90,7 @@ def index():
                 events.append({
                     'title': event.title,
                     'groupId': event.group_id,
+                    'groupName': Groups.query.filter_by(id=event.group_id).first().name if Groups.query.filter_by(id=event.group_id).first() else None,
                     'start': f"{event.date.strftime('%Y-%m-%d')} {event.start_time}",
                     'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
                     'modalId': event.id,

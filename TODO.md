@@ -1,6 +1,3 @@
-# Index:
-* order by date (most recent ones before)
-
 # Create event: 
 * add card color 
 
@@ -8,4 +5,5 @@
 
 * Implement flask_login?? https://flask-login.readthedocs.io/en/latest/
 
-* add calendar
+* add calendar:
+- different visualization if the user is participating or not

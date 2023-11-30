@@ -57,7 +57,7 @@
                     </div>
                     <div class="modal-body">
                         <p style="text-align: justify;">Description: {{ event['description'] }}</p>
-                        <p style="text-align: justify;">Group: {{ event['groupId'] }}</p>
+                        <p style="text-align: justify;">Group: {{ event['groupName'] }}</p>
                         <p style="text-align: justify;">Maximum number of assistants: {{ event['n_assistants'] }}</p>
 
                         <!-- Show list of participants -->
@@ -155,8 +155,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 modalInstance.show();
             }
         }
-  });
-  calendar.render();
+    });
+    calendar.render();
 });
 </script>
 {% endblock %}
