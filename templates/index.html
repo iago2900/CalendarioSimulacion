@@ -3,26 +3,10 @@
 
 {% block main %}
 <div class="container">
-        {% if session['role_id'] == 1 %}
-        <!-- If case to "checked" the right button -->
-        {% if button == 'old' %} 
-        <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-            <input type="radio" class="btn-check" name="btnradio" id="button_active_events" autocomplete="off">
-            <label class="btn btn-outline-primary" for="button_active_events">Active</label>
-        
-            <input type="radio" class="btn-check" name="btnradio" id="button_old_events" autocomplete="off" checked>
-            <label class="btn btn-outline-primary" for="button_old_events">Old</label>
+    {% if session['role_id'] == 1 %}
+        <div class="col text-end" style="margin-bottom: 20px;">
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exportModal">Export</button>
         </div>
-        {% else %}
-        <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-            <input type="radio" class="btn-check" name="btnradio" id="button_active_events" autocomplete="off" checked>
-            <label class="btn btn-outline-primary" for="button_active_events">Active</label>
-        
-            <input type="radio" class="btn-check" name="btnradio" id="button_old_events" autocomplete="off">
-            <label class="btn btn-outline-primary" for="button_old_events">Old</label>
-        </div>
-        {% endif %}
-
         <!-- Modal for export button -->
         <div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -39,9 +23,9 @@
                                     <option value="none" class="italic" disabled selected><i>Select an event</i></option>
                                     {% set event_titles = [] %} <!-- to avoid repeting titles -->
                                     {% for e in events %}
-                                        {% if e.title not in event_titles %}
-                                            {% set _ = event_titles.append(e.title) %}
-                                            <option value="{{ e.title }}">{{ e.title }}</option>
+                                        {% if e['title'] not in event_titles %}
+                                            {% set _ = event_titles.append(e['title']) %}
+                                            <option value="{{ e['title'] }}">{{ e['title'] }}</option>
                                         {% endif %}
                                     {% endfor %}
                                 </select>
@@ -55,88 +39,73 @@
                 </div>
             </div>
         </div>
-        <div class="col text-end" style="margin-bottom: 20px;">
-            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exportModal">Export</button>
-        </div>
-        
     {% endif %}
+
     <div class="row">
-        {% if not events %}
-            <p>No current events available</p>
-        {% endif %}
+
+        <!-- Add a container for the calendar -->
+        <div id='calendar'></div>
 
         {% for event in events %}
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ event.title }}</h5>
-                        <p class="card-text">Group: {% if event.group %}{{ event.group.name }}{% else %}All{% endif %}</p>
-                        <p class="card-text">Date: {{ event.date }}</p>
-                        <p class="card-text">Time: {{ event.start_time }} - {{ event.end_time }}</p>
-                        <button class="btn btn-primary show-more" data-bs-toggle="modal" data-bs-target="#modal_{{ event.id }}">Show More</button>
-                        
+        <!-- Modal -->
+        <div class="modal fade" id="{{ event['modalId'] }}" tabindex="-1" role="dialog" aria-labelledby="ModalLabel_{{ event['modalId'] }}" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="ModalLabel_{{ event['modalId'] }}">{{ event['title'] }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p style="text-align: justify;">Description: {{ event['description'] }}</p>
+                        <p style="text-align: justify;">Group: {{ event['groupId'] }}</p>
+                        <p style="text-align: justify;">Maximum number of assistants: {{ event['n_assistants'] }}</p>
+
+                        <!-- Show list of participants -->
+                        <div style="text-align: justify;" id="participant-list_{{ event['modalId'] }}"></div>
+
+                        <button class="btn btn-success" id="add_{{ event['modalId'] }}" onclick="addUserEvent('{{event['modalId']}}', '{{ user_id }}', '{{ event['n_assistants'] }}')">Add Me to Event</button>
+                        <button class="btn btn-danger" id="delete_{{ event['modalId'] }}" onclick="deleteUserEvent('{{event['modalId']}}', '{{ user_id }}')">Delete from event</button>
+
+                    </div>
+                    <div class="modal-footer">
                         <button class="btn btn-secondary" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-three-dots-vertical">...</i>
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                             {% if session['role_id'] == 1 %}
-                            <li><button class="dropdown-item" onclick="exportParticipants('{{ event.id }}')">Export</button></li>
-                            <li><button class="dropdown-item" onclick="deleteEvent('{{ event.id }}')">Delete</button></li>
+                            <li><button class="dropdown-item" onclick="exportParticipants('{{ event['modalId'] }}')">Export</button></li>
+                            <li><button class="dropdown-item" onclick="deleteEvent('{{ event['modalId'] }}')">Delete</button></li>
                             {% endif %}
                         </ul>
-
-                        <!-- Modal -->
-                        <div class="modal fade" id="modal_{{ event.id }}" tabindex="-1" role="dialog" aria-labelledby="ModalLabel_{{ event.id }}" aria-hidden="true">
-                            <div class="modal-dialog" role="document">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="ModalLabel_{{ event.id }}">{{ event.title }}</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <p style="text-align: justify;">Description: {{ event.description }}</p>
-                                        <p style="text-align: justify;">Maximum number of assistants: {{ event.n_assistants }}</p>
-
-                                        <!-- Show list of participants -->
-                                        <div style="text-align: justify;" id="participant-list_{{ event.id }}"></div>
-
-                                        <button class="btn btn-success" id="add_{{ event.id }}" onclick="addUserEvent('{{event.id}}', '{{ user_id }}', '{{ event.n_assistants }}')">Add Me to Event</button>
-                                        <button class="btn btn-danger" id="delete_{{ event.id }}" onclick="deleteUserEvent('{{event.id}}', '{{ user_id }}')">Delete from event</button>
-
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!--end modal-->
-                        
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
+        </div>
+        <!--end modal-->
+                        
             <script>
                 $(document).ready(function() {
                     const user_id = "{{ user_id }}";
-                    const event_id = "{{ event.id }}"; 
-                    const max_participants = "{{ event.n_assistants }}";
+                    const event_id = "{{ event['modalId'] }}"; 
+                    const max_participants = "{{ event['n_assistants'] }}";
 
                     function updateButtonState(event_id, user_id, max_participants) {
                         getNumberOfParticipants(event_id)
                         .then(number_of_participants => {
                             if (number_of_participants >= max_participants) {
-                                $('#add_{{ event.id }}').hide(); 
+                                $('#add_{{ event['modalId'] }}').hide(); 
                             } else {
-                                $('#add_{{ event.id }}').show(); 
+                                $('#add_{{ event['modalId'] }}').show(); 
                             }
 
                             getParticipationStatus(event_id, user_id)
                             .then(participates => {
                                 if (participates) {
-                                    $('#add_{{ event.id }}').hide();
-                                    $('#delete_{{ event.id }}').show();
+                                    $('#add_{{ event['modalId'] }}').hide();
+                                    $('#delete_{{ event['modalId'] }}').show();
                                 } else {
-                                    $('#delete_{{ event.id }}').hide();
+                                    $('#delete_{{ event['modalId'] }}').hide();
                                 }
                             });
                         });
@@ -150,7 +119,7 @@
                         fetch(`/get_participants/${event_id}`)
                             .then(response => response.json())
                             .then(participants => {
-                                const participantList = document.getElementById('participant-list_{{ event.id }}');
+                                const participantList = document.getElementById('participant-list_{{ event['modalId'] }}');
                                 const participantsHtml = participants.map(participant => `<li>${participant.name} ${participant.surname}</li>`).join('');
                                 participantList.innerHTML = participantsHtml;
                                 console.log(participants);
@@ -164,18 +133,30 @@
         {% endfor %}
     </div>
 </div>
+
+
 <script>
-    // Get the radio buttons
-    const activeButton = document.getElementById('button_active_events');
-    const oldButton = document.getElementById('button_old_events');
-
-    // Add click event listeners
-    activeButton.addEventListener('click', function() {
-        window.location.href = '/';
-    });
-
-    oldButton.addEventListener('click', function() {
-        window.location.href = '/old-events';
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: {{ events|tojson }},
+        headerToolbar: {
+            right: 'prev,next today',
+            center: 'title',
+            left: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+        },
+        eventClick: function(info) {
+            // Add your logic to display different modals based on the event
+            if (info.event.extendedProps.modalId) {
+                var modalId = info.event.extendedProps.modalId;
+                var modal = document.getElementById(modalId);
+                var modalInstance = new bootstrap.Modal(modal);
+                modalInstance.show();
+            }
+        }
+  });
+  calendar.render();
+});
 </script>
 {% endblock %}

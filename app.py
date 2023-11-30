@@ -40,47 +40,64 @@ with app.app_context():
 @login_required
 def index():
     """
-    Show list of future events with same group id as user or None group id.
+    Show list of events with same group id as user or None group id.
     """
     user_id = session['user_id']
     role_id = session['role_id']
 
-    # if it is an admin, then show all active events, no matter the group
+    # if it is an admin, then show all events, no matter the group
     if role_id == 1:
-        # use this when the switch is active in index.html
-        active_events = [event for event in Events.query.filter(Events.date > datetime.now().date()).all()]
+        events = []
+        for event in Events.query.all():
+            events.append({
+                'title': event.title,
+                'groupId': event.group_id,
+                'start': f"{event.date.strftime('%Y-%m-%d')} {event.start_time}",
+                'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
+                'modalId': event.id,
+                'description': event.description,
+                'n_assistants': event.n_assistants
+                #'backgroundColor': 'red' TODO
+            })
 
-        return render_template("index.html", events=active_events, user_id=user_id)
+        return render_template("index.html", events=events, user_id=user_id)
+
+    else: # if user is not admin        
+        usergroups = UserGroups.query.filter_by(user_id=user_id).all()
+        events = []
+        event_ids = set() # to avoid repetitions
+        for usergroup in usergroups:
+            events_by_group = Events.query.filter((Events.group_id == usergroup.group_id)).all()
+            for event in events_by_group:
+                if event.id not in event_ids:
+                    events.append({
+                        'title': event.title,
+                        'groupId': event.group_id,
+                        'start': f"{event.date.strftime('%Y-%m-%d')} {event.start_time}",
+                        'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
+                        'modalId': event.id,
+                        'description': event.description,
+                        'n_assistants': event.n_assistants
+                        #'backgroundColor': 'red' TODO
+                    })
+                    event_ids.add(event.id)
         
-    usergroups = UserGroups.query.filter_by(user_id=user_id).all()
-    events = []
-    event_ids = set() # to avoid repetitions
-    for usergroup in usergroups:
-        events_by_group = Events.query.filter(Events.group_id == usergroup.group_id, Events.date >= datetime.now().date()).all()
-        for event in events_by_group:
+        # events that do not have a group
+        for event in Events.query.filter((Events.group_id == None)).all():
             if event.id not in event_ids:
-                events.append(event)
+                events.append({
+                    'title': event.title,
+                    'groupId': event.group_id,
+                    'start': f"{event.date.strftime('%Y-%m-%d')} {event.start_time}",
+                    'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
+                    'modalId': event.id,
+                    'description': event.description,
+                    'n_assistants': event.n_assistants
+                    #'backgroundColor': 'red' TODO
+                })
                 event_ids.add(event.id)
 
-    for event in Events.query.filter(Events.group_id == None, Events.date >= datetime.now().date()):
-        if event.id not in event_ids:
-            events.append(event)
-            event_ids.add(event.id)
-    
-
-    return render_template("index.html", events=events, user_id=user_id)
-
-@app.route("/old-events", methods=['GET'])
-@login_required
-@permission_admin
-def index_old():
-    """
-    Show list of old events for admin.
-    """
-    user_id = session['user_id']
-    old_events = [event for event in Events.query.filter(Events.date <= datetime.now().date()).all()]
-
-    return render_template("index.html", events=old_events, user_id=user_id, button='old')
+        return render_template("index.html", events=events, user_id=user_id)
 
 
 @app.route('/export_participants_by_title', methods=['POST'])
