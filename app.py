@@ -287,7 +287,7 @@ def manage_groups():
         if not request.form.get("name"):
             return apology("must provide a group name", 403)
         
-        users_excel = request.files["fileUpload"]
+        users_file = request.files["fileUpload"]
         
         existing_group = Groups.query.filter_by(name=request.form.get("name")).first()
         if existing_group:
@@ -302,8 +302,10 @@ def manage_groups():
                 db_session.add(user_group_log)
                 db_session.commit()
 
-            if users_excel:
-                users_df = pd.read_excel(users_excel)
+            if users_file:
+                excel_data = users_file.read()
+                users_df = pd.read_excel(io.BytesIO(excel_data))
+                
                 for index, row in users_df.iterrows():
                     name = row['Nom']
                     surname = row['Primer cognom'] + ' ' + row['Segon cognom']
@@ -344,8 +346,10 @@ def manage_groups():
                 db_session.add(user_group_log)
                 db_session.commit()
 
-            if users_excel:
-                users_df = pd.read_excel(users_excel)
+            if users_file:
+                excel_data = users_file.read()
+                users_df = pd.read_excel(io.BytesIO(excel_data))
+                
                 for index, row in users_df.iterrows():
                     name = row['Nom']
                     surname = row['Primer cognom'] + ' ' + row['Segon cognom']
