@@ -4,7 +4,7 @@ from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 import pandas as pd
-
+import io
 
 from models import Users, Roles, Groups, Events, UserEvents, UserGroups
 from helpers import login_required, apology, permission_admin
@@ -136,11 +136,13 @@ def export_participants_by_title():
     
     # Create a DataFrame with the participants' names for each event date and time
     participants_df = pd.DataFrame(participants_data)
-    filename = f'participants_{title}.xlsx'
-    participants_df.to_excel(filename)
-    
-    return send_file(filename, as_attachment=True)
 
+    # Create the Excel file in memory
+    excel_file = io.BytesIO()
+    participants_df.to_excel(excel_file)
+    excel_file.seek(0)  # Move the cursor to the start of the file
+
+    return send_file(excel_file, as_attachment=True, download_name=f'participants_{title}.xlsx', mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 @app.route('/export_participants/<int:event_id>')
 @login_required
@@ -155,11 +157,13 @@ def export_participants(event_id):
     
     # Create a DataFrame with the participants' names
     participants_df = pd.DataFrame([f"{participant.user.name} {participant.user.surname}" for participant in participants], columns=['Name'])
-    # Save the DataFrame as an Excel file
-    filename = f'participants_event_{event_id}.xlsx'
-    participants_df.to_excel(filename, index=False)
+
+    # Create the Excel file in memory
+    excel_file = io.BytesIO()
+    participants_df.to_excel(excel_file)
+    excel_file.seek(0)  # Move the cursor to the start of the file
     
-    return send_file(filename, as_attachment=True)
+    return send_file(excel_file, as_attachment=True, download_name=f'participants_event_{event_id}.xlsx', mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     
 @app.route("/create-event", methods=["GET", "POST"])
