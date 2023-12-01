@@ -141,6 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         events: {{ events|tojson }},
+        eventDisplay: 'block',
         headerToolbar: {
             right: 'prev,next today',
             center: 'title',

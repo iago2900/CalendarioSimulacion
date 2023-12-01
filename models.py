@@ -31,6 +31,7 @@ class Events(Base):
     start_time = Column(Time, nullable=False) 
     end_time = Column(Time, nullable=False)
     n_assistants = Column(Integer, nullable=False) # max asistants to event
+    color = Column(String(7), nullable=True) # Hexadecimal color code
     group_id = Column(Integer, ForeignKey('groups.id', ondelete='CASCADE'))
     group = relationship('Groups', backref=backref('events', lazy=True))
 

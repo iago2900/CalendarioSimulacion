@@ -44,7 +44,6 @@ def index():
     """
     user_id = session['user_id']
     role_id = session['role_id']
-
     # if it is an admin, then show all events, no matter the group
     if role_id == 1:
         events = []
@@ -57,8 +56,10 @@ def index():
                 'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
                 'modalId': event.id,
                 'description': event.description,
-                'n_assistants': event.n_assistants
-                #'backgroundColor': 'red' TODO
+                'n_assistants': event.n_assistants,
+                'backgroundColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'white',
+                'borderColor': event.color,
+                'textColor': 'black' if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else event.color
             })
 
         return render_template("index.html", events=events, user_id=user_id)
@@ -79,8 +80,10 @@ def index():
                         'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
                         'modalId': event.id,
                         'description': event.description,
-                        'n_assistants': event.n_assistants
-                        #'backgroundColor': 'red' TODO
+                        'n_assistants': event.n_assistants,
+                        'backgroundColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'white',
+                        'borderColor': event.color,
+                        'textColor': 'black' if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else event.color
                     })
                     event_ids.add(event.id)
         
@@ -95,8 +98,10 @@ def index():
                     'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
                     'modalId': event.id,
                     'description': event.description,
-                    'n_assistants': event.n_assistants
-                    #'backgroundColor': 'red' TODO
+                    'n_assistants': event.n_assistants,
+                    'backgroundColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'white',
+                    'borderColor': event.color,
+                    'textColor': 'black' if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else event.color
                 })
                 event_ids.add(event.id)
 
@@ -197,6 +202,7 @@ def create_event():
         description = request.form.get("description") # if empty is ""
         group_id = request.form.get("group") # if empty is None
         n_assistants = request.form.get("n_assistants")
+        color = request.form.get("color")
 
         for date, start_time, end_time in zip(request.form.getlist("dates[]"), request.form.getlist("start_times[]"), request.form.getlist("end_times[]")):
             date = datetime.strptime(date,'%Y-%m-%d').date()
@@ -204,7 +210,7 @@ def create_event():
             end_time = datetime.strptime(end_time, "%H:%M").time()
 
             # Update DDBB
-            new_event = Events(title=title, description=description, date=date, start_time=start_time, end_time=end_time, group_id=group_id, n_assistants=n_assistants)
+            new_event = Events(title=title, description=description, date=date, start_time=start_time, end_time=end_time, group_id=group_id, n_assistants=n_assistants, color=color)
             # Add the event to the database
             db_session.add(new_event)
             db_session.commit()
@@ -349,7 +355,7 @@ def manage_groups():
             if users_file:
                 excel_data = users_file.read()
                 users_df = pd.read_excel(io.BytesIO(excel_data))
-                
+
                 for index, row in users_df.iterrows():
                     name = row['Nom']
                     surname = row['Primer cognom'] + ' ' + row['Segon cognom']
