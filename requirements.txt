@@ -5,3 +5,4 @@ requests
 Flask-SQLAlchemy
 openpyxl
 pandas
+python-dotenv

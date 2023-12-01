@@ -10,9 +10,12 @@ from models import Users, Roles, Groups, Events, UserEvents, UserGroups
 from helpers import login_required, apology, permission_admin
 from database import db_session, init_db
 
+from dotenv import load_dotenv
+load_dotenv()
+
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'your_secret_key_here'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['SESSION_TYPE'] = 'filesystem'
 # manage sessions per request - make sure connections are closed and returned
 app.teardown_appcontext(lambda exc: db_session.close())
