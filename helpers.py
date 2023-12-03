@@ -1,4 +1,4 @@
-from flask import redirect, render_template, session
+from flask import redirect, session, flash
 from models import Users
 from functools import wraps
 
@@ -23,20 +23,7 @@ def permission_admin(f):
     def decorated_function(*args, **kwargs):
         user = Users.query.filter_by(id=session["user_id"]).first()
         if user.role_id != 1:
-            return apology("Access denied.", 403)
+            flash("Access denied.", "danger")
+            return redirect("/")
         return f(*args, **kwargs)
     return decorated_function
-
-def apology(message, code=400):
-    """Render message as an apology to user."""
-    def escape(s):
-        """
-        Escape special characters.
-
-        https://github.com/jacebrowning/memegen#special-characters
-        """
-        for old, new in [("-", "--"), (" ", "-"), ("_", "__"), ("?", "~q"),
-                         ("%", "~p"), ("#", "~h"), ("/", "~s"), ("\"", "''")]:
-            s = s.replace(old, new)
-        return s
-    return render_template("apology.html", top=code, bottom=escape(message)), code

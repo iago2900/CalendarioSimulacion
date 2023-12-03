@@ -7,7 +7,7 @@ import pandas as pd
 import io
 
 from models import Users, Roles, Groups, Events, UserEvents, UserGroups
-from helpers import login_required, apology, permission_admin
+from helpers import login_required, permission_admin
 from database import db_session, init_db
 
 from dotenv import load_dotenv
@@ -15,8 +15,9 @@ load_dotenv()
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-app.config['SESSION_TYPE'] = 'filesystem'
+# Load configuration environment
+app.config.from_object("config.DevConfig")
+
 # manage sessions per request - make sure connections are closed and returned
 app.teardown_appcontext(lambda exc: db_session.close())
 
@@ -120,7 +121,8 @@ def export_participants_by_title():
     '''
     # if no title is sent
     if not request.form.get('eventTitle'):
-        return apology('Must provide a title.')
+        flash("Must select a title.", "danger")
+        return redirect("/")
 
     title = request.form.get('eventTitle')
     events_with_title = Events.query.filter_by(title=title).all()
@@ -187,18 +189,6 @@ def create_event():
 
         return render_template("create_event.html", groups=groups)
     else: #post
-        
-        # Ensure mandatory fields are submitted
-        if not request.form.get("title"):
-            return apology("must provide title", 403)
-        elif not request.form.get("dates[]"):
-            return apology("must provide date", 403)
-        elif not request.form.get("start_times[]"):
-            return apology("must provide start time", 403)
-        elif not request.form.get("end_times[]"):
-            return apology("must provide end time", 403)
-        elif not request.form.get("n_assistants"):
-            return apology("must provide number of assistants", 403)
         
         # Get data from new event
         title = request.form.get("title")
@@ -293,9 +283,6 @@ def manage_groups():
         return render_template("manage_groups.html", all_users=all_users, groups_with_users=groups_with_users)
     
     else: #post
-        if not request.form.get("name"):
-            return apology("must provide a group name", 403)
-        
         users_file = request.files["fileUpload"]
         
         existing_group = Groups.query.filter_by(name=request.form.get("name")).first()
@@ -381,7 +368,8 @@ def manage_groups():
                         user_group_log = UserGroups(user_id=existing_user.id, group_id=group_id)
                         db_session.add(user_group_log)
                         db_session.commit()
-
+        
+        flash("Group created successfully!", "success")
         return redirect("/manage-groups")
 
 @app.route('/add-user-group', methods=['POST'])
@@ -401,6 +389,8 @@ def add_user_group():
         db_session.add(user_group_log)
         db_session.commit()
 
+        flash("User added to group.", "success")
+
     return redirect("/manage-groups")
 
 @app.route('/delete_user_group', methods=['DELETE'])
@@ -416,6 +406,9 @@ def delete_user_group():
     if log_to_delete:
         db_session.delete(log_to_delete)
         db_session.commit()
+
+        flash("User deleted from group.", "warning")
+
         return jsonify({"message": "Log eliminado exitosamente"})
     else:
         return jsonify({"message": "No se encontró el log"})
@@ -436,6 +429,8 @@ def delete_group():
     if group_to_delete:
         db_session.delete(group_to_delete)
         db_session.commit()
+
+        flash("Group deleted.", "warning")
 
         return jsonify({"message": "Log eliminado exitosamente"})
     else:
@@ -458,6 +453,8 @@ def delete_event():
         db_session.delete(event_to_delete)
         db_session.commit()
 
+        flash("Event deleted.", "warning")
+
         return jsonify({"message": "Log eliminado exitosamente"})
     else:
         return jsonify({"message": "No se encontró el log"})
@@ -473,22 +470,23 @@ def assign_roles():
         return render_template("assign_roles.html", users=users, roles=roles)
     else:
         if not request.form.get("username"):
-            return apology("must provide username", 403)
+            flash("Must select a username.", "danger")
+            return redirect("/assign-roles")
         elif not request.form.get("role"):
-            return apology("must provide role", 403)
+            flash("Must select a role.", "danger")
+            return redirect("/assign-roles")
         
         user_id = request.form.get("username")
         role_id = request.form.get("role")
 
         # Find the user
         user = Users.query.filter_by(id=user_id).first()
-
-        if not user:
-            return apology("user not found", 403)
         
         # Update the role_id
         user.role_id = role_id
         db_session.commit()
+
+        flash("Role assigned successfully!", "success")
 
         return redirect("/")
 
@@ -503,23 +501,19 @@ def login():
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
 
-        # Ensure fields are submitted
-        if not request.form.get("username"):
-            return apology("must provide username", 403)
-
-        elif not request.form.get("password"):
-            return apology("must provide password", 403)
-
         # Query database for username
         rows = Users.query.filter_by(username=request.form.get("username")).first()
 
         # Ensure username exists and password is correct
         if rows == None or not check_password_hash(rows.hash, request.form.get("password")):
-            return apology("invalid username and/or password", 403)
+            flash("Invalid username and/or password.", 'danger')
+            return render_template("login.html")
 
         # Remember which user has logged in
         session["user_id"] = rows.id
         session["role_id"] = rows.role_id
+
+        flash("Successful login!", "success")
 
         # Redirect user to home page
         return redirect("/")
@@ -548,22 +542,10 @@ def register():
 
     else: # method == 'POST'
 
-        # Ensure fields are submitted
-        if not request.form.get("name"):
-            return apology("must provide name", 403)
-
-        elif not request.form.get("surname"):
-            return apology("must provide surname", 403)
-
-        elif not request.form.get("username"):
-            return apology("must provide username", 400)
-
-        elif not request.form.get("password"):
-            return apology("must provide password", 400)
-
         # Ensure confirm_password was submitted and is the same
-        elif not request.form.get("confirmation") or (request.form.get("confirmation") != request.form.get("password")):
-            return apology("must confirm the password", 400)
+        if request.form.get("confirmation") != request.form.get("password"):
+            flash("Passwords must match.", "danger")
+            return render_template("register.html")
 
         # Query database for name and surname
         existing_user = Users.query.filter_by(name=request.form.get("name"), surname=request.form.get("surname")).first()
@@ -579,12 +561,14 @@ def register():
                 # Add the user to the database
                 db_session.add(new_user)
                 db_session.commit()
+                flash("User registered successfully!", "success")
 
             else:
-                return apology("username already exists", 400)
+                flash("Username already exists.", "danger")
+                return render_template("register.html")
         else:
-            return apology("name and surname already exist", 400)
-
+            flash("Name and surname already exist.", "danger")
+            return render_template("register.html")
 
         # Redirect user to home page
         return redirect("/")
@@ -599,14 +583,11 @@ def password():
 
     else:
 
-        # Ensure password was submitted
-        if not request.form.get("password"):
-            return apology("must provide password", 403)
-
-        # Ensure confirm_password was submitted and is the same
-        elif not request.form.get("confirmation") or (request.form.get("confirmation") != request.form.get("password")):
-            return apology("must confirm the password", 403)
-
+        # Ensure confirm_password is the same
+        if request.form.get("confirmation") != request.form.get("password"):
+            flash("Passwords must match.", "danger")
+            return render_template("password.html")
+        
         # Get the user you want to update
         user = Users.query.filter_by(id=session["user_id"]).first()
 
@@ -615,6 +596,8 @@ def password():
 
         # Commit the changes to the database
         db_session.commit()
+
+        flash("Password changed successfully!", "success")
 
         # Redirect user to home page
         return redirect("/")
