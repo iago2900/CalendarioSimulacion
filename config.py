@@ -3,9 +3,8 @@ import os
 class BaseConfig():
     TESTING = False
     DEBUG = False
-    SECRET_KEY = os.environ.get('SECRET_KEY') # use os.random(string) or something like that
+    SECRET_KEY = os.urandom(16).hex()
     SESSION_TYPE = 'filesystem'
-    DB_NAME = 'production-db'
     SESSION_COOKIE_SECURE = True # cookies are only send if https
 
 class DevConfig(BaseConfig):
@@ -18,9 +17,11 @@ class ProductionConfig(BaseConfig):
     FLASK_ENV = 'production'
     DEBUG = False
     SESSION_COOKIE_SECURE = False
+    DB_NAME = 'production-db'
 
 
 class TestConfig(BaseConfig):
-    FLASK_ENV = 'development'
+    FLASK_ENV = 'testing'
     TESTING = True
     SESSION_COOKIE_SECURE = False
+    DB_NAME = 'test-db'

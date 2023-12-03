@@ -1,5 +1,5 @@
 from flask import redirect, session, flash
-from models import Users
+from app.models import Users
 from functools import wraps
 
 

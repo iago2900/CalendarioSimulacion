@@ -1,27 +1,18 @@
+from app import app
+
 import os
-from flask import Flask, flash, redirect, render_template, request, session, jsonify, send_file
-from flask_session import Session
+from flask import flash, redirect, render_template, request, session, jsonify, send_file
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 import pandas as pd
 import io
 
-from models import Users, Roles, Groups, Events, UserEvents, UserGroups
-from helpers import login_required, permission_admin
-from database import db_session, init_db
-
-from dotenv import load_dotenv
-load_dotenv()
-
-app = Flask(__name__)
-
-# Load configuration environment
-app.config.from_object("config.DevConfig")
+from app.models import Users, Roles, Groups, Events, UserEvents, UserGroups
+from app.utils import login_required, permission_admin
+from app.database import db_session, init_db
 
 # manage sessions per request - make sure connections are closed and returned
 app.teardown_appcontext(lambda exc: db_session.close())
-
-Session(app)
 
 with app.app_context():
     init_db()

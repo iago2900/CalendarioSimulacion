@@ -1,6 +1,6 @@
 from sqlalchemy import Boolean, Column, Integer, String, ForeignKey, Date, Time
 from sqlalchemy.orm import relationship, backref
-from database import Base
+from app.database import Base
 
 class Roles(Base):
     __tablename__ = "roles"
