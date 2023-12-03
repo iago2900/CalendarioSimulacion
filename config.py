@@ -10,18 +10,13 @@ class BaseConfig():
 class DevConfig(BaseConfig):
     FLASK_ENV = 'development'
     DEBUG = True
-    DB_NAME = 'development-db'
-
 
 class ProductionConfig(BaseConfig):
     FLASK_ENV = 'production'
     DEBUG = False
     SESSION_COOKIE_SECURE = False
-    DB_NAME = 'production-db'
-
 
 class TestConfig(BaseConfig):
     FLASK_ENV = 'testing'
     TESTING = True
     SESSION_COOKIE_SECURE = False
-    DB_NAME = 'test-db'

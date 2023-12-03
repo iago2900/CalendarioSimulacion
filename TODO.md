@@ -1,7 +1,3 @@
-# Register / Login
-
-* Implement flask_login?? https://flask-login.readthedocs.io/en/latest/
-
 
 use production grade server: gunicorn. Then pass the ssl certificate here.
 
