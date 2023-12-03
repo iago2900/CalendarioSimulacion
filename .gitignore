@@ -3,4 +3,3 @@ __pycache__*
 test*
 flask_session/
 instance/
-config.py

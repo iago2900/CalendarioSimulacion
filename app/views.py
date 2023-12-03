@@ -1,18 +1,28 @@
 from app import app
 
 import os
-from flask import flash, redirect, render_template, request, session, jsonify, send_file
+from flask import flash, redirect, render_template, request, jsonify, send_file
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 import pandas as pd
 import io
 
 from app.models import Users, Roles, Groups, Events, UserEvents, UserGroups
-from app.utils import login_required, permission_admin
+from app.utils import permission_admin#, login_required
 from app.database import db_session, init_db
 
 # manage sessions per request - make sure connections are closed and returned
 app.teardown_appcontext(lambda exc: db_session.close())
+
+login_manager_app=LoginManager(app)
+login_manager_app.session_protection = "strong"
+login_manager_app.login_view = "login"
+login_manager_app.login_message_category = "info"
+
+@login_manager_app.user_loader
+def load_user(user_id):
+    return Users.query.get(int(user_id))
 
 with app.app_context():
     init_db()
@@ -37,8 +47,8 @@ def index():
     """
     Show list of events with same group id as user or None group id.
     """
-    user_id = session['user_id']
-    role_id = session['role_id']
+    user_id = current_user.id
+    role_id = current_user.role_id
     # if it is an admin, then show all events, no matter the group
     if role_id == 1:
         events = []
@@ -487,24 +497,23 @@ def login():
     """Log user in"""
 
     # Forget any user_id
-    session.clear()
+    logout_user()
 
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
 
         # Query database for username
-        rows = Users.query.filter_by(username=request.form.get("username")).first()
+        user = Users.query.filter_by(username=request.form.get("username")).first()
 
         # Ensure username exists and password is correct
-        if rows == None or not check_password_hash(rows.hash, request.form.get("password")):
+        if user == None or not check_password_hash(user.hash, request.form.get("password")):
             flash("Invalid username and/or password.", 'danger')
             return render_template("login.html")
+        
+        else: 
+            login_user(user)
 
-        # Remember which user has logged in
-        session["user_id"] = rows.id
-        session["role_id"] = rows.role_id
-
-        flash("Successful login!", "success")
+            flash("Successful login!", "success")
 
         # Redirect user to home page
         return redirect("/")
@@ -519,7 +528,8 @@ def logout():
     """Log user out"""
 
     # Forget any user_id
-    session.clear()
+    #session.clear()
+    logout_user()
 
     # Redirect user to login form
     return redirect("/")
@@ -580,7 +590,7 @@ def password():
             return render_template("password.html")
         
         # Get the user you want to update
-        user = Users.query.filter_by(id=session["user_id"]).first()
+        user = Users.query.filter_by(id=current_user.id).first()
 
         # Update the user's hash
         user.hash = generate_password_hash(request.form.get("password"))

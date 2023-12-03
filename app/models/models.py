@@ -1,13 +1,14 @@
 from sqlalchemy import Boolean, Column, Integer, String, ForeignKey, Date, Time
 from sqlalchemy.orm import relationship, backref
 from app.database import Base
+from flask_login import UserMixin
 
 class Roles(Base):
     __tablename__ = "roles"
     id = Column(Integer, primary_key=True)
     role = Column(String(255), nullable=False)
 
-class Users(Base):
+class Users(Base, UserMixin):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)

@@ -39,8 +39,8 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbar">
-                    {% if session["user_id"] %}
-                        {% if session["role_id"] == 1 %}
+                    {% if current_user.id %}
+                        {% if current_user.role_id == 1 %}
                         <!-- Admin Settings Menu -->
                         <ul class="navbar-nav me-auto mt-2">
                             <li class="nav-item dropdown">
@@ -93,7 +93,7 @@
         <!-- Footer -->
         <footer class="bg-light text-center py-3 fixed-bottom" style="z-index: -1;">
             <div class="container">
-                <span class="text-muted">2023 SIM-RADAR. {% if session['role_id'] == 1 %}You are an Admin.{% endif %}</span>
+                <span class="text-muted">2023 SIM-RADAR. {% if current_user.role_id == 1 %}You are an Admin.{% endif %}</span>
             </div>
         </footer>
     </body>
