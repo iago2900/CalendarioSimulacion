@@ -3,7 +3,7 @@ import os
 class BaseConfig():
     TESTING = False
     DEBUG = False
-    SECRET_KEY = os.urandom(16).hex()
+    SECRET_KEY = '30ce06bd5a0d6089a26e0e84e933947f'
     SESSION_TYPE = 'filesystem'
     SESSION_COOKIE_SECURE = True # cookies are only send if https
 
