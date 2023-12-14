@@ -16,7 +16,7 @@ class DevConfig(BaseConfig):
 class ProductionConfig(BaseConfig):
     FLASK_ENV = 'production'
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DB_URL')
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///app/SIMRadar.db'
     SESSION_COOKIE_SECURE = False
 
 class TestConfig(BaseConfig):
