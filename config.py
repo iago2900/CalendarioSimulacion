@@ -1,5 +1,9 @@
 import os
 
+from dotenv import load_dotenv
+load_dotenv()
+
+
 class BaseConfig():
     TESTING = False
     DEBUG = False
@@ -10,10 +14,12 @@ class BaseConfig():
 class DevConfig(BaseConfig):
     FLASK_ENV = 'development'
     DEBUG = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///app/SIMRadar.db'
 
 class ProductionConfig(BaseConfig):
     FLASK_ENV = 'production'
     DEBUG = False
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DB_URL')
     SESSION_COOKIE_SECURE = False
 
 class TestConfig(BaseConfig):
