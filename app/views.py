@@ -38,11 +38,6 @@ with app.app_context():
         db_session.add(new_user)
         db_session.commit()
 
-@app.teardown_appcontext
-def shutdown_session(exception=None):
-    db_session.remove()
-    engine.dispose()
-
 @app.route("/", methods=['GET'])
 @login_required
 def index():
