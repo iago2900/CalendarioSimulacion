@@ -1,1 +1,1 @@
-from .database import db_session, init_db, Base
+from .database import db_session, init_db, Base, engine

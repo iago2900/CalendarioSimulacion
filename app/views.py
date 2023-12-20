@@ -10,10 +10,7 @@ import io
 
 from app.models import Users, Roles, Groups, Events, UserEvents, UserGroups
 from app.utils import permission_admin#, login_required
-from app.database import db_session, init_db
-
-# manage sessions per request - make sure connections are closed and returned
-app.teardown_appcontext(lambda exc: db_session.close())
+from app.database import db_session, init_db, engine
 
 login_manager_app=LoginManager(app)
 login_manager_app.session_protection = "strong"
@@ -40,6 +37,11 @@ with app.app_context():
         new_user = Users(name="admin", surname="admin", username="admin", hash=generate_password_hash("admin"), role_id=1)
         db_session.add(new_user)
         db_session.commit()
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db_session.remove()
+    engine.dispose()
 
 @app.route("/", methods=['GET'])
 @login_required
