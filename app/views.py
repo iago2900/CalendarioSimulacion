@@ -248,7 +248,7 @@ def delete_user_event():
 @app.route('/get_participants/<int:event_id>')
 @login_required
 def get_participants(event_id):
-    participants = db_session.query(Users).join(UserEvents).filter(UserEvents.event_id == event_id).all()
+    participants = db_session.query(Users).join(UserEvents, Users.id == UserEvents.user_id).filter(UserEvents.event_id == event_id).all()
 
     return jsonify([{'id': participant.id, 'name': participant.name, 'surname': participant.surname} for participant in participants])
 
