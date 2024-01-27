@@ -367,10 +367,11 @@ def manage_groups():
                         surname = row['Primer cognom'] + ' ' + row['Segon cognom']
                         username = row['Correu']
                         hash = str(row['Nif'])
-                        role_id = 1
+                        role_id = 2
                     except KeyError:
                         flash("Invalid excel file format. Please check the column names.", 'danger')
                         return redirect('/manage-groups')
+                    
                     existing_user = Users.query.filter_by(username=username).first()
                     # Check that the user is new
                     if existing_user is None:
@@ -438,7 +439,7 @@ def manage_groups():
                         surname = row['Primer cognom'] + ' ' + row['Segon cognom']
                         username = row['Correu']
                         hash = str(row['Nif'])
-                        role_id = 1
+                        role_id = 2
                     except KeyError:
                         flash("Invalid excel file format. Please check the column names.", 'danger')
                         # Delete the group that was just created
@@ -521,7 +522,7 @@ def add_user_group():
                     surname = row['Primer cognom'] + ' ' + row['Segon cognom']
                     username = row['Correu']
                     hash = str(row['Nif'])
-                    role_id = 1
+                    role_id = 2
                 except KeyError:
                     flash("Invalid excel file format. Please check the column names.", 'danger')
                     return redirect('/manage-groups')
