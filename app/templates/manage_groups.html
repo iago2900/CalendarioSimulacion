@@ -42,13 +42,19 @@
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                             
-                                        <form action="/add-user-group" method="post">
+                                        <form action="/add-user-group" method="post" enctype="multipart/form-data">
                                             <div class="modal-body">
                                                 <div class="mb-3">
                                                     <label for="name">Group name:</label>
                                                     <input autocomplete="off" class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text" value="{{ group_user_data['group'].name }}" readonly>
                                                 </div>
+                                                <br>
                                                 <div class="mb-3">
+                                                    <div class="mb-3">
+                                                        <label for="fileUpload">Upload Excel File with users:</label>
+                                                        <input type="file" id="fileUpload" name="fileUpload" accept=".xlsx, .xls">
+                                                    </div>
+                                                    <p>or</p>
                                                     <label for="selectUsers_{{ group_user_data['group'].id }}">Select Users:</label><br>
                                                     <select id="selectUsers_{{ group_user_data['group'].id }}" class="form-control" multiple="multiple" name="users[]">
                                                         {% for id, name, surname, username in all_users %}
@@ -103,12 +109,12 @@
                     <label for="name">Group name:</label>
                     <input autocomplete="off" class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text" required>
                 </div>
+                <br>
                 <div class="mb-3">
                     <div class="mb-3">
-                        <label for="fileUpload">Upload Excel File:</label>
+                        <label for="fileUpload">Upload Excel File with users:</label>
                         <input type="file" id="fileUpload" name="fileUpload" accept=".xlsx, .xls">
                     </div>
-
                     <p>or</p>
                     <div class="mb-3">
                         <label for="selectUsers2">Select Users:</label><br>

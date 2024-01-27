@@ -15,3 +15,12 @@ def permission_admin(f):
             return redirect("/")
         return f(*args, **kwargs)
     return decorated_function
+
+# function to log errors into csv file
+import csv
+from datetime import datetime
+
+def log_error_to_csv(error_message):
+    with open('error_log.csv', mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([error_message, datetime.now()])

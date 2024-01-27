@@ -6,25 +6,29 @@
 
 {% block main %}
 <form action="/create-event" method="post">
+
+    <!--hidden field to store event id, empty if creating new, full if editing existing event-->
+    <input type="hidden" id="event_id" name="event_id" value="{{ event.id if event else '' }}">
+
     <div class="row mb-3">
         <label for="title" class="col-sm-2 col-form-label">Title:</label>
         <div class="col-sm-10">
-            <input autocomplete="off" class="form-control" id="title" name="title" placeholder="Title" type="text" required>
+            <input autocomplete="off" class="form-control" id="title" name="title" placeholder="Title" type="text" value="{{ event.title if event else '' }}" required>
         </div>
     </div>
     <div class="row mb-3">
         <label for="description" class="col-sm-2 col-form-label">Description:</label>
         <div class="col-sm-10">
-            <textarea class="form-control" id="description" name="description" placeholder="Description"></textarea>
+            <textarea class="form-control" id="description" name="description" placeholder="Description">{{ event.description if event else '' }}</textarea>
         </div>
     </div>
     <div class="row mb-3">
         <label for="group" class="col-sm-2 col-form-label">Group:</label>
         <div class="col-sm-10">
             <select class="form-control form-select" id="group" name="group">
-                <option value="none" class="italic" disabled selected><i>Select a group</i></option>
+                <option value="none" class="italic" disabled {% if not event or (event and not event.group_id) %}selected{% endif %}><i>Select a group</i></option>
                 {% for id, name in groups %}
-                <option value="{{id}}">{{name}}</option>
+                <option value="{{id}}" {% if event and event.group_id == id %}selected{% endif %}>{{name}}</option>
                 {% endfor %}
             </select>
         </div>
@@ -32,13 +36,13 @@
     <div class="row mb-3">
         <label for="n_assistants" class="col-sm-2 col-form-label">Maximum number of assistants:</label>
         <div class="col-sm-10">
-            <input class="form-control" id="n_assistants" name="n_assistants" type="number" required>
+            <input class="form-control" id="n_assistants" name="n_assistants" type="number" value="{{ event.n_assistants if event else '' }}" required>
         </div>
     </div>
     <div class="row mb-3">
         <label for="color" class="col-sm-2 col-form-label">Color:</label>
         <div class="col-sm-1">
-            <input class="form-control" id="color" name="color" type="color" value="#537fbe">
+            <input class="form-control" id="color" name="color" type="color" value="{{ event.color if event else '#537fbe' }}">
         </div>
     </div>
 
@@ -47,24 +51,24 @@
         <div class="row mb-3 time-slot">
             <label class="col-sm-1 offset-sm-1 col-form-label">Date:</label>
             <div class="col-sm-2">
-                <input class="form-control" name="dates[]" type="date" required>
+                <input class="form-control" name="dates[]" type="date" value="{{ event.date if event else '' }}" required>
             </div>
             <label class="col-sm-1 col-form-label">Starting Time:</label>
             <div class="col-sm-2">
-                <input class="form-control" name="start_times[]" type="time" required>
+                <input class="form-control" name="start_times[]" type="time" value="{{ event.start_time if event else '' }}"required>
             </div>
             <label class="col-sm-1 col-form-label">Ending Time:</label>
             <div class="col-sm-2">
-                <input class="form-control" name="end_times[]" type="time" required>
+                <input class="form-control" name="end_times[]" type="time" value="{{ event.end_time if event else '' }}" required>
             </div>
-            <div class="col-sm-2">
+            <div class="col-sm-2" {% if event %}style="display:none;"{% endif %}>
                 <button type="button" class="btn btn-danger btn-remove-time-slot" onclick="removeTimeSlot(this)">Remove</button>
             </div>
         </div>
     </div>
 
     <!-- Add button to add more time slots -->
-    <div class="row">
+    <div class="row" {% if event %}style="display:none;"{% endif %}>
         <div class="col-sm-8 offset-sm-2">
             <button type="button" class="btn btn-secondary" id="addTimeSlot">Add Time Slot</button>
         </div>
@@ -73,7 +77,7 @@
 <br>
     <div class="row">
         <div class="col-sm-8 offset-sm-2">
-            <button class="btn btn-primary" type="submit">Create Event</button>
+            <button class="btn btn-primary" type="submit">{{ 'Edit Event' if event else 'Create Event' }}</button>
         </div>
     </div>
 </form>

@@ -68,15 +68,16 @@
 
                     </div>
                     <div class="modal-footer">
+                        {% if current_user.role_id == 1 %}
                         <button class="btn btn-secondary" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-three-dots-vertical">...</i>
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            {% if current_user.role_id == 1 %}
                             <li><button class="dropdown-item" onclick="exportParticipants('{{ event['modalId'] }}')">Export</button></li>
+                            <li><a class="dropdown-item" href="create-event?event_id={{ event['modalId'] }}">Edit</a></li>
                             <li><button class="dropdown-item" onclick="deleteEvent('{{ event['modalId'] }}')">Delete</button></li>
-                            {% endif %}
                         </ul>
+                        {% endif %}
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>

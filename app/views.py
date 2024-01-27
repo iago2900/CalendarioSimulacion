@@ -9,8 +9,10 @@ import pandas as pd
 import io
 
 from app.models import Users, Roles, Groups, Events, UserEvents, UserGroups
-from app.utils import permission_admin#, login_required
+from app.utils import permission_admin, log_error_to_csv
 from app.database import db_session, init_db, engine
+
+from sqlalchemy.exc import SQLAlchemyError
 
 login_manager_app=LoginManager(app)
 login_manager_app.session_protection = "strong"
@@ -19,24 +21,35 @@ login_manager_app.login_message_category = "info"
 
 @login_manager_app.user_loader
 def load_user(user_id):
-    return Users.query.get(int(user_id))
+    try:
+        # Convert user_id to int and query the user
+        return Users.query.get(int(user_id))
+    except (ValueError, TypeError, SQLAlchemyError) as e:
+        # If user_id is not an integer, return None
+        flash(f'Database error: {e}', 'danger')
+        log_error_to_csv(f'Database error: {e}')
+        return None
 
 with app.app_context():
-    init_db()
-    # Check if roles already exist
-    existing_roles = Roles.query.all()
-    if not existing_roles:
-        roles = ['admin', 'user']
-        for role in roles:
-            new_role = Roles(role=role)
-            db_session.add(new_role)
-        db_session.commit()
-    # Check if user already exist
-    existing_user = Users.query.all()
-    if not existing_user:
-        new_user = Users(name="admin", surname="admin", username="admin", hash=generate_password_hash("admin"), role_id=1)
-        db_session.add(new_user)
-        db_session.commit()
+    try:
+        init_db()
+        # Check if roles already exist
+        existing_roles = Roles.query.all()
+        if not existing_roles:
+            roles = ['admin', 'user']
+            for role in roles:
+                new_role = Roles(role=role)
+                db_session.add(new_role)
+            db_session.commit()
+        # Check if user already exist
+        existing_user = Users.query.all()
+        if not existing_user:
+            new_user = Users(name="admin", surname="admin", username="admin", hash=generate_password_hash("admin"), role_id=1)
+            db_session.add(new_user)
+            db_session.commit()
+    except (SQLAlchemyError, Exception) as e:
+        flash(f'Database error: {e}', 'danger')
+        log_error_to_csv(f'Database error: {e}')
 
 @app.route("/", methods=['GET'])
 @login_required
@@ -157,8 +170,6 @@ def export_participants_by_title():
 @permission_admin
 def export_participants(event_id):
     # Logic to generate the Excel file
-    # Replace this with your own logic to generate the Excel file
-    # You can use libraries like pandas or openpyxl to create the Excel file
     
     # Assuming you have generated the Excel file and saved it as 'participants.xlsx'
     participants = UserEvents.query.filter_by(event_id=event_id).join(Users).all()
@@ -185,10 +196,15 @@ def create_event():
 
         groups = [(group.id, group.name) for group in Groups.query.all()]
 
-        return render_template("create_event.html", groups=groups)
+        event_id = request.args.get('event_id')
+        event = None
+        if event_id:
+            event = Events.query.get(event_id)  # Reemplaza con tu propia lógica
+        return render_template("create_event.html", groups=groups, event=event)
+    
     else: #post
-        
-        # Get data from new event
+        event_id = request.form.get('event_id')
+        # Get data from event
         title = request.form.get("title")
         description = request.form.get("description") # if empty is ""
         group_id = request.form.get("group") # if empty is None
@@ -197,14 +213,42 @@ def create_event():
 
         for date, start_time, end_time in zip(request.form.getlist("dates[]"), request.form.getlist("start_times[]"), request.form.getlist("end_times[]")):
             date = datetime.strptime(date,'%Y-%m-%d').date()
-            start_time = datetime.strptime(start_time, "%H:%M").time()
-            end_time = datetime.strptime(end_time, "%H:%M").time()
-
+            try:
+                start_time = datetime.strptime(start_time, "%H:%M").time()
+            except ValueError:
+                start_time = datetime.strptime(start_time, "%H:%M:%S").time()
+            try:
+                end_time = datetime.strptime(end_time, "%H:%M").time()
+            except ValueError:
+                end_time = datetime.strptime(end_time, "%H:%M:%S").time()
+        
+        if event_id:
+            # Update the event in the database
+            try:
+                existing_event = Events.query.filter_by(id=event_id).first()
+                if existing_event:
+                    existing_event.title = title
+                    existing_event.description = description
+                    existing_event.date = date
+                    existing_event.start_time = start_time
+                    existing_event.end_time = end_time
+                    existing_event.group_id = group_id
+                    existing_event.n_assistants = n_assistants
+                    existing_event.color = color
+                    db_session.commit()
+            except (SQLAlchemyError, Exception) as e:
+                flash(f'Database error: {e}', 'danger')
+                log_error_to_csv(f'Database error: {e}')
+        else:
             # Update DDBB
-            new_event = Events(title=title, description=description, date=date, start_time=start_time, end_time=end_time, group_id=group_id, n_assistants=n_assistants, color=color)
-            # Add the event to the database
-            db_session.add(new_event)
-            db_session.commit()
+            try:
+                new_event = Events(title=title, description=description, date=date, start_time=start_time, end_time=end_time, group_id=group_id, n_assistants=n_assistants, color=color)
+                # Add the event to the database
+                db_session.add(new_event)
+                db_session.commit()
+            except (SQLAlchemyError, Exception) as e:
+                flash(f'Database error: {e}', 'danger')
+                log_error_to_csv(f'Database error: {e}')
 
         return redirect("/")
 
@@ -223,10 +267,15 @@ def add_user_event():
         return jsonify({"message": "El log ya existe"})
     
     new_user_event = UserEvents(user_id=user_id, event_id=event_id)
-    db_session.add(new_user_event)
-    db_session.commit()
-    
-    return jsonify({"message": "Evento de usuario agregado exitosamente"})
+    try:
+        db_session.add(new_user_event)
+        db_session.commit()
+        return jsonify({"message": "Evento de usuario agregado exitosamente"})
+    except (SQLAlchemyError, Exception) as e:
+        db_session.rollback()
+        flash(f'Database error: {e}', 'danger')
+        log_error_to_csv(f'Database error: {e}')
+        return jsonify({"message": "Error al agregar el evento de usuario"})
 
 @app.route('/delete_user_event', methods=['DELETE'])
 @login_required
@@ -238,9 +287,15 @@ def delete_user_event():
     log_to_delete = UserEvents.query.filter_by(user_id=user_id, event_id=event_id).first()
     
     if log_to_delete:
-        db_session.delete(log_to_delete)
-        db_session.commit()
-        return jsonify({"message": "Log eliminado exitosamente"})
+        try:
+            db_session.delete(log_to_delete)
+            db_session.commit()
+            return jsonify({"message": "Log eliminado exitosamente"})
+        except (SQLAlchemyError, Exception) as e:
+            db_session.rollback()
+            flash(f'Database error: {e}', 'danger')
+            log_error_to_csv(f'Database error: {e}')
+            return jsonify({"message": "Error al eliminar el log"})
     else:
         return jsonify({"message": "No se encontró el log"})
 
@@ -292,43 +347,70 @@ def manage_groups():
 
             # Create UserGroup log for each user added
             for user_id in selected_users:
-                user_group_log = UserGroups(user_id=user_id, group_id=group_id)
-                db_session.add(user_group_log)
-                db_session.commit()
+                if not UserGroups.query.filter_by(user_id=user_id, group_id=group_id).first():
+                    user_group_log = UserGroups(user_id=user_id, group_id=group_id)
+                    db_session.add(user_group_log)
+                    try:
+                        db_session.commit()
+                    except (SQLAlchemyError, Exception) as e:
+                        db_session.rollback()
+                        flash(f'Database error: {e}', 'danger')
+                        log_error_to_csv(f'Database error: {e}')
 
             if users_file:
                 excel_data = users_file.read()
                 users_df = pd.read_excel(io.BytesIO(excel_data))
                 
                 for index, row in users_df.iterrows():
-                    name = row['Nom']
-                    surname = row['Primer cognom'] + ' ' + row['Segon cognom']
-                    username = row['Correu']
-                    hash = row['Nif']
-                    role_id = 1
-
+                    try:
+                        name = row['Nom']
+                        surname = row['Primer cognom'] + ' ' + row['Segon cognom']
+                        username = row['Correu']
+                        hash = str(row['Nif'])
+                        role_id = 1
+                    except KeyError:
+                        flash("Invalid excel file format. Please check the column names.", 'danger')
+                        return redirect('/manage-groups')
                     existing_user = Users.query.filter_by(username=username).first()
                     # Check that the user is new
-                    if existing_user in None:
+                    if existing_user is None:
                         new_user = Users(name=name, surname=surname, username=username, hash=generate_password_hash(hash), role_id=role_id)
                         db_session.add(new_user)
-                        db_session.commit()
+                        try:
+                            db_session.commit()
+                        except (SQLAlchemyError, Exception) as e:
+                            db_session.rollback()
+                            flash(f'Database error: {e}', 'danger')
+                            log_error_to_csv(f'Database error: {e}')
                         user_group_log = UserGroups(user_id=new_user.id, group_id=group_id)
                         db_session.add(user_group_log)
-                        db_session.commit()
-                    
-                    # Add the existing user to the group
+                        try:
+                            db_session.commit()
+                        except (SQLAlchemyError, Exception) as e:
+                            db_session.rollback()
+                            flash(f'Database error: {e}', 'danger')
+                            log_error_to_csv(f'Database error: {e}')
                     else:
-                        user_group_log = UserGroups(user_id=existing_user.id, group_id=group_id)
-                        db_session.add(user_group_log)
-                        db_session.commit()
+                        if not UserGroups.query.filter_by(user_id=existing_user.id, group_id=group_id).first():
+                            user_group_log = UserGroups(user_id=existing_user.id, group_id=group_id)
+                            db_session.add(user_group_log)
+                            try:
+                                db_session.commit()
+                            except (SQLAlchemyError, Exception) as e:
+                                db_session.rollback()
+                                flash(f'Database error: {e}', 'danger')
+                                log_error_to_csv(f'Database error: {e}')
         
         else:
             name = request.form.get("name")
             new_group = Groups(name=name)
             db_session.add(new_group)
-            db_session.commit()
-
+            try:
+                db_session.commit()
+            except (SQLAlchemyError, Exception) as e:
+                db_session.rollback()
+                flash(f'Database error: {e}', 'danger')
+                log_error_to_csv(f'Database error: {e}')
             group_id = new_group.id
 
             # Get the list of selected users
@@ -336,36 +418,67 @@ def manage_groups():
 
             # Create UserGroup log for each user added
             for user_id in selected_users:
-                user_group_log = UserGroups(user_id=user_id, group_id=group_id)
-                db_session.add(user_group_log)
-                db_session.commit()
+                if not UserGroups.query.filter_by(user_id=user_id, group_id=group_id).first():
+                    user_group_log = UserGroups(user_id=user_id, group_id=group_id)
+                    db_session.add(user_group_log)
+                    try:
+                        db_session.commit()
+                    except (SQLAlchemyError, Exception) as e:
+                        db_session.rollback()
+                        flash(f'Database error: {e}', 'danger')
+                        log_error_to_csv(f'Database error: {e}')
 
             if users_file:
                 excel_data = users_file.read()
                 users_df = pd.read_excel(io.BytesIO(excel_data))
 
                 for index, row in users_df.iterrows():
-                    name = row['Nom']
-                    surname = row['Primer cognom'] + ' ' + row['Segon cognom']
-                    username = row['Correu']
-                    hash = row['Nif']
-                    role_id = 1
-
+                    try:
+                        name = row['Nom']
+                        surname = row['Primer cognom'] + ' ' + row['Segon cognom']
+                        username = row['Correu']
+                        hash = str(row['Nif'])
+                        role_id = 1
+                    except KeyError:
+                        flash("Invalid excel file format. Please check the column names.", 'danger')
+                        # Delete the group that was just created
+                        db_session.delete(new_group)
+                        try:
+                            db_session.commit()
+                        except (SQLAlchemyError, Exception) as e:
+                            db_session.rollback()
+                            flash(f'Database error: {e}', 'danger')
+                            log_error_to_csv(f'Database error: {e}')
+                        return redirect('/manage-groups')
                     existing_user = Users.query.filter_by(username=username).first()
                     # Check that the user is new
                     if existing_user is None:
                         new_user = Users(name=name, surname=surname, username=username, hash=generate_password_hash(hash), role_id=role_id)
                         db_session.add(new_user)
-                        db_session.commit()
+                        try:
+                            db_session.commit()
+                        except (SQLAlchemyError, Exception) as e:
+                            db_session.rollback()
+                            flash(f'Database error: {e}', 'danger')
+                            log_error_to_csv(f'Database error: {e}')
                         user_group_log = UserGroups(user_id=new_user.id, group_id=group_id)
                         db_session.add(user_group_log)
-                        db_session.commit()
-                    
-                    # Add the existing user to the group
+                        try:
+                            db_session.commit()
+                        except (SQLAlchemyError, Exception) as e:
+                            db_session.rollback()
+                            flash(f'Database error: {e}', 'danger')
+                            log_error_to_csv(f'Database error: {e}')
                     else:
-                        user_group_log = UserGroups(user_id=existing_user.id, group_id=group_id)
-                        db_session.add(user_group_log)
-                        db_session.commit()
+                        if not UserGroups.query.filter_by(user_id=existing_user.id, group_id=group_id).first():
+                            user_group_log = UserGroups(user_id=existing_user.id, group_id=group_id)
+                            db_session.add(user_group_log)
+                            try:
+                                db_session.commit()
+                            except (SQLAlchemyError, Exception) as e:
+                                db_session.rollback()
+                                flash(f'Database error: {e}', 'danger')
+                                log_error_to_csv(f'Database error: {e}')
         
         flash("Group created successfully!", "success")
         return redirect("/manage-groups")
@@ -374,21 +487,71 @@ def manage_groups():
 @login_required
 @permission_admin
 def add_user_group():
-    
-    group = Groups.query.filter_by(name=request.form.get("name")).first()
-    group_id = group.id
+    users_file = request.files["fileUpload"]
+        
+    existing_group = Groups.query.filter_by(name=request.form.get("name")).first()
+    if existing_group:
+        group_id = existing_group.id
 
-    # Get the list of selected users
-    selected_users = request.form.getlist('users[]')
+        # Get the list of selected users
+        selected_users = request.form.getlist('users[]')
 
-    # Create UserGroup log for each user added
-    for user_id in selected_users:
-        user_group_log = UserGroups(user_id=user_id, group_id=group_id)
-        db_session.add(user_group_log)
-        db_session.commit()
+        # Create UserGroup log for each user added if not already in the group
+        for user_id in selected_users:
+            if not UserGroups.query.filter_by(user_id=user_id, group_id=group_id).first():
+                user_group_log = UserGroups(user_id=user_id, group_id=group_id)
+                db_session.add(user_group_log)
+                try:
+                    db_session.commit()
+                    flash("User added to group.", "success")
+                except (SQLAlchemyError, Exception) as e:
+                    db_session.rollback()
+                    flash(f'Database error: {e}', 'danger')
+                    log_error_to_csv(f'Database error: {e}')
+            else:
+                flash("User is already in the group.", "info")
 
-        flash("User added to group.", "success")
+        if users_file:
+            excel_data = users_file.read()
+            users_df = pd.read_excel(io.BytesIO(excel_data))
+            
+            for index, row in users_df.iterrows():
+                try:
+                    name = row['Nom']
+                    surname = row['Primer cognom'] + ' ' + row['Segon cognom']
+                    username = row['Correu']
+                    hash = str(row['Nif'])
+                    role_id = 1
+                except KeyError:
+                    flash("Invalid excel file format. Please check the column names.", 'danger')
+                    return redirect('/manage-groups')
 
+                existing_user = Users.query.filter_by(username=username).first()
+                # Check that the user is new or not already in the group
+                if existing_user is None:
+                    new_user = Users(name=name, surname=surname, username=username, hash=generate_password_hash(hash), role_id=role_id)
+                    db_session.add(new_user)
+                    try:
+                        db_session.commit()
+                        user_group_log = UserGroups(user_id=new_user.id, group_id=group_id)
+                        db_session.add(user_group_log)
+                        db_session.commit()
+                    except (SQLAlchemyError, Exception) as e:
+                        db_session.rollback()
+                        flash(f'Database error: {e}', 'danger')
+                        log_error_to_csv(f'Database error: {e}')
+                elif not UserGroups.query.filter_by(user_id=existing_user.id, group_id=group_id).first():
+                    user_group_log = UserGroups(user_id=existing_user.id, group_id=group_id)
+                    db_session.add(user_group_log)
+                    try:
+                        db_session.commit()
+                    except (SQLAlchemyError, Exception) as e:
+                        db_session.rollback()
+                        flash(f'Database error: {e}', 'danger')
+                        log_error_to_csv(f'Database error: {e}')
+                else:
+                    flash(f"User {username} is already in the group.", "info")
+                    
     return redirect("/manage-groups")
 
 @app.route('/delete_user_group', methods=['DELETE'])
@@ -402,12 +565,15 @@ def delete_user_group():
     log_to_delete = UserGroups.query.filter_by(user_id=user_id, group_id=group_id).first()
     
     if log_to_delete:
-        db_session.delete(log_to_delete)
-        db_session.commit()
-
-        flash("User deleted from group.", "warning")
-
-        return jsonify({"message": "Log eliminado exitosamente"})
+        try:
+            db_session.delete(log_to_delete)
+            db_session.commit()
+            flash("User deleted from group.", "warning")
+            return jsonify({"message": "Log eliminado exitosamente"})
+        except (SQLAlchemyError, Exception) as e:
+            db_session.rollback()
+            flash(f'Database error: {e}', 'danger')
+            log_error_to_csv(f'Database error: {e}')
     else:
         return jsonify({"message": "No se encontró el log"})
 
@@ -415,47 +581,55 @@ def delete_user_group():
 @login_required
 @permission_admin
 def delete_group():
-
-    group_id = request.json.get('group_id')
+    try:
+        group_id = request.json.get('group_id')
+        
+        # Delete the logs in UserGroups table that contain the group_id
+        UserGroups.query.filter_by(group_id=group_id).delete()
+        
+        # Buscar el log en la base de datos
+        group_to_delete = Groups.query.filter_by(id=group_id).first()
+        
+        if group_to_delete:
+            db_session.delete(group_to_delete)
+            db_session.commit()
     
-    # Delete the logs in UserGroups table that contain the group_id
-    UserGroups.query.filter_by(group_id=group_id).delete()
+            flash("Group deleted.", "warning")
     
-    # Buscar el log en la base de datos
-    group_to_delete = Groups.query.filter_by(id=group_id).first()
-    
-    if group_to_delete:
-        db_session.delete(group_to_delete)
-        db_session.commit()
-
-        flash("Group deleted.", "warning")
-
-        return jsonify({"message": "Log eliminado exitosamente"})
-    else:
-        return jsonify({"message": "No se encontró el log"})
+            return jsonify({"message": "Log eliminado exitosamente"})
+        else:
+            return jsonify({"message": "No se encontró el log"})
+    except (SQLAlchemyError, Exception) as e:
+        db_session.rollback()
+        flash(f'Database error: {e}', 'danger')
+        log_error_to_csv(f'Database error: {e}')
 
 @app.route('/delete_event', methods=['DELETE'])
 @login_required
 @permission_admin
 def delete_event():
-
-    event_id = request.json.get('event_id')
+    try:
+        event_id = request.json.get('event_id')
+        
+        # Delete the logs in UserEvents table that contain the event_id
+        UserEvents.query.filter_by(event_id=event_id).delete()
+        
+        # Buscar el log en la base de datos
+        event_to_delete = Events.query.filter_by(id=event_id).first()
+        
+        if event_to_delete:
+            db_session.delete(event_to_delete)
+            db_session.commit()
     
-    # Delete the logs in UserEvents table that contain the event_id
-    UserEvents.query.filter_by(event_id=event_id).delete()
+            flash("Event deleted.", "warning")
     
-    # Buscar el log en la base de datos
-    event_to_delete = Events.query.filter_by(id=event_id).first()
-    
-    if event_to_delete:
-        db_session.delete(event_to_delete)
-        db_session.commit()
-
-        flash("Event deleted.", "warning")
-
-        return jsonify({"message": "Log eliminado exitosamente"})
-    else:
-        return jsonify({"message": "No se encontró el log"})
+            return jsonify({"message": "Log eliminado exitosamente"})
+        else:
+            return jsonify({"message": "No se encontró el log"})
+    except (SQLAlchemyError, Exception) as e:
+        db_session.rollback()
+        flash(f'Database error: {e}', 'danger')
+        log_error_to_csv(f'Database error: {e}')
 
 @app.route("/assign-roles", methods=["GET", "POST"])
 @login_required
@@ -477,18 +651,23 @@ def assign_roles():
         user_id = request.form.get("username")
         role_id = request.form.get("role")
 
-        # Find the user
-        user = Users.query.filter_by(id=user_id).first()
+        try:
+            # Find the user
+            user = Users.query.filter_by(id=user_id).first()
+            
+            # Update the role_id
+            user.role_id = role_id
+            db_session.commit()
+
+            flash("Role assigned successfully!", "success")
+
+            return redirect("/")
+        except (SQLAlchemyError, Exception) as e:
+            db_session.rollback()
+            flash(f'Database error: {e}', 'danger')
+            log_error_to_csv(f'Database error: {e}')
+            return jsonify({"message": "Error assigning role"})
         
-        # Update the role_id
-        user.role_id = role_id
-        db_session.commit()
-
-        flash("Role assigned successfully!", "success")
-
-        return redirect("/")
-
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
@@ -558,9 +737,13 @@ def register():
 
                 # Add the user to the database
                 db_session.add(new_user)
-                db_session.commit()
-                flash("User registered successfully!", "success")
-
+                try:
+                    db_session.commit()
+                    flash("User registered successfully!", "success")
+                except (SQLAlchemyError, Exception) as e:
+                    db_session.rollback()
+                    flash(f'Database error: {e}', 'danger')
+                    log_error_to_csv(f'Database error: {e}')
             else:
                 flash("Username already exists.", "danger")
                 return render_template("register.html")
@@ -593,9 +776,19 @@ def password():
         user.hash = generate_password_hash(request.form.get("password"))
 
         # Commit the changes to the database
-        db_session.commit()
-
-        flash("Password changed successfully!", "success")
+        try:
+            db_session.commit()
+            flash("Password changed successfully!", "success")
+        except (SQLAlchemyError, Exception) as e:
+            db_session.rollback()
+            flash(f'Database error: {e}', 'danger')
+            log_error_to_csv(f'Database error: {e}')
 
         # Redirect user to home page
         return redirect("/")
+    
+# close all db sessions
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db_session.remove()
+
