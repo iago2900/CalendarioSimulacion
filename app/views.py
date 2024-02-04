@@ -142,8 +142,8 @@ def export_participants_by_title():
     # Create a DataFrame with the participants' names for each event date and time
     participants_data = {}
     for event in events_with_title:
-        event_date = event.date.strftime('%Y-%m-%d')
-        event_time = f"{event.start_time} - {event.end_time}"
+        event_date = event.date.strftime('%d-%m-%Y')
+        event_time = f"{event.start_time.strftime('%H:%M')} - {event.end_time.strftime('%H:%M')}"
         if (event_date, event_time) not in participants_data:
             participants_data[(event_date, event_time)] = []
         event_participants = UserEvents.query.filter_by(event_id=event.id).join(Users).all()
@@ -213,7 +213,7 @@ def create_event():
 
         for date, start_time, end_time in zip(request.form.getlist("dates[]"), request.form.getlist("start_times[]"), request.form.getlist("end_times[]")):
             date = datetime.strptime(date,'%Y-%m-%d').date()
-            
+
             if event_id:
                 # Update the event in the database
                 try:
