@@ -148,6 +148,12 @@ document.addEventListener('DOMContentLoaded', function() {
             center: 'title',
             left: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
         },
+        eventTimeFormat: { // like '14:30'
+            hour: '2-digit',
+            minute: '2-digit',
+            meridiem: false,
+            hour12: false
+        },
         eventClick: function(info) {
             // Add your logic to display different modals based on the event
             if (info.event.extendedProps.modalId) {

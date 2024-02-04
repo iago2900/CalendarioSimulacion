@@ -213,42 +213,34 @@ def create_event():
 
         for date, start_time, end_time in zip(request.form.getlist("dates[]"), request.form.getlist("start_times[]"), request.form.getlist("end_times[]")):
             date = datetime.strptime(date,'%Y-%m-%d').date()
-            try:
-                start_time = datetime.strptime(start_time, "%H:%M").time()
-            except ValueError:
-                start_time = datetime.strptime(start_time, "%H:%M:%S").time()
-            try:
-                end_time = datetime.strptime(end_time, "%H:%M").time()
-            except ValueError:
-                end_time = datetime.strptime(end_time, "%H:%M:%S").time()
-        
-        if event_id:
-            # Update the event in the database
-            try:
-                existing_event = Events.query.filter_by(id=event_id).first()
-                if existing_event:
-                    existing_event.title = title
-                    existing_event.description = description
-                    existing_event.date = date
-                    existing_event.start_time = start_time
-                    existing_event.end_time = end_time
-                    existing_event.group_id = group_id
-                    existing_event.n_assistants = n_assistants
-                    existing_event.color = color
+            
+            if event_id:
+                # Update the event in the database
+                try:
+                    existing_event = Events.query.filter_by(id=event_id).first()
+                    if existing_event:
+                        existing_event.title = title
+                        existing_event.description = description
+                        existing_event.date = date
+                        existing_event.start_time = start_time
+                        existing_event.end_time = end_time
+                        existing_event.group_id = group_id
+                        existing_event.n_assistants = n_assistants
+                        existing_event.color = color
+                        db_session.commit()
+                except (SQLAlchemyError, Exception) as e:
+                    flash(f'Database error: {e}', 'danger')
+                    log_error_to_csv(f'Database error: {e}')
+            else:
+                # Update DDBB
+                try:
+                    new_event = Events(title=title, description=description, date=date, start_time=start_time, end_time=end_time, group_id=group_id, n_assistants=n_assistants, color=color)
+                    # Add the event to the database
+                    db_session.add(new_event)
                     db_session.commit()
-            except (SQLAlchemyError, Exception) as e:
-                flash(f'Database error: {e}', 'danger')
-                log_error_to_csv(f'Database error: {e}')
-        else:
-            # Update DDBB
-            try:
-                new_event = Events(title=title, description=description, date=date, start_time=start_time, end_time=end_time, group_id=group_id, n_assistants=n_assistants, color=color)
-                # Add the event to the database
-                db_session.add(new_event)
-                db_session.commit()
-            except (SQLAlchemyError, Exception) as e:
-                flash(f'Database error: {e}', 'danger')
-                log_error_to_csv(f'Database error: {e}')
+                except (SQLAlchemyError, Exception) as e:
+                    flash(f'Database error: {e}', 'danger')
+                    log_error_to_csv(f'Database error: {e}')
 
         return redirect("/")
 
