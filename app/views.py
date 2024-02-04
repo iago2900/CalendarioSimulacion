@@ -73,7 +73,7 @@ def index():
                 'description': event.description,
                 'n_assistants': event.n_assistants,
                 'backgroundColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'white',
-                'borderColor': event.color,
+                'borderColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'lightgrey',
                 'textColor': 'black' if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else event.color
             })
 
@@ -97,7 +97,7 @@ def index():
                         'description': event.description,
                         'n_assistants': event.n_assistants,
                         'backgroundColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'white',
-                        'borderColor': event.color,
+                        'borderColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'lightgrey',
                         'textColor': 'black' if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else event.color
                     })
                     event_ids.add(event.id)
@@ -115,7 +115,7 @@ def index():
                     'description': event.description,
                     'n_assistants': event.n_assistants,
                     'backgroundColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'white',
-                    'borderColor': event.color,
+                    'borderColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'lightgrey',
                     'textColor': 'black' if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else event.color
                 })
                 event_ids.add(event.id)
@@ -213,6 +213,10 @@ def create_event():
 
         for date, start_time, end_time in zip(request.form.getlist("dates[]"), request.form.getlist("start_times[]"), request.form.getlist("end_times[]")):
             date = datetime.strptime(date,'%Y-%m-%d').date()
+
+            if start_time > end_time:
+                flash('Start time cannot be greater than end time', 'danger')
+                break
 
             if event_id:
                 # Update the event in the database
