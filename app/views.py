@@ -619,6 +619,38 @@ def manage_users():
     
         all_users = Users.query.all()
         return render_template("manage_users.html", all_users=all_users)
+    else:
+        users_file = request.files["fileUpload"]
+        if users_file:
+            excel_data = users_file.read()
+            users_df = pd.read_excel(io.BytesIO(excel_data))
+            
+            for index, row in users_df.iterrows():
+                try:
+                    name = row['Nom']
+                    surname = row['Primer cognom'] + ' ' + row['Segon cognom']
+                    username = row['Correu']
+                    hash = str(row['Nif'])
+                    role_id = 2
+                except KeyError:
+                    flash("Invalid excel file format. Please check the column names.", 'danger')
+                    return redirect('/manage-users')
+
+                existing_user = Users.query.filter_by(username=username).first()
+                # Check that the user is new or not already in the group
+                if existing_user is None:
+                    new_user = Users(name=name, surname=surname, username=username, hash=generate_password_hash(hash), role_id=role_id)
+                    db_session.add(new_user)
+                    try:
+                        db_session.commit()
+                    except (SQLAlchemyError, Exception) as e:
+                        db_session.rollback()
+                        flash(f'Database error: {e}', 'danger')
+                        log_error_to_csv(f'Database error: {e}')
+                        
+        return redirect("/manage-users")
+        
+        
 
 @app.route('/delete_user', methods=['DELETE'])
 @login_required
@@ -657,6 +689,7 @@ def edit_user_data():
         if user:
             user.name = name
             user.surname = surname
+            user.username = username
             user.role_id = role_id
             db_session.commit()
             flash("User data updated successfully!", "success")

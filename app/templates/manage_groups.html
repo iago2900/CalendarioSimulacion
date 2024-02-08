@@ -8,6 +8,21 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
+            <select id="showGroup" class="form-control" multiple="multiple" name="showgroups[]" onchange="updateGroupTable(this)">
+                {% for group_user_data in groups_with_users %}
+                    <option value="{{ group_user_data['group'].name }}">{{ group_user_data['group'].name }}</option>
+                {% endfor %}
+            </select>
+            <script>
+                $(document).ready(function() {
+                    // Inicializa Select2 en el elemento select
+                    $('#showGroup').select2({
+                        placeholder: 'Search for groups...',
+                        width: '100%'
+                    });
+                });
+            </script>
+            <div style="margin-top: 20px;"></div>
             <table class="table table-striped table-bordered">
                 <thead class="thead-dark">
                     <tr>
@@ -67,7 +82,8 @@
                                                         // Inicializa Select2 en el elemento select
                                                         $('#selectUsers_{{ group_user_data['group'].id }}').select2({
                                                             placeholder: 'Search for users...',
-                                                            width: '100%'
+                                                            width: '100%',
+                                                            dropdownParent: $('#addUsersModal_{{ group_user_data['group'].id }}')
                                                         });
                                                     });
                                                 </script>
@@ -129,7 +145,8 @@
                             // Inicializa Select2 en el elemento select
                             $('#selectUsers2').select2({
                                 placeholder: 'Search for users...',
-                                width: '100%'
+                                width: '100%',
+                                dropdownParent: $('#createGroupModal')
                             });
                         });
                     </script>

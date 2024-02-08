@@ -168,6 +168,28 @@ function isButtonChecked(buttonId) {
     return false; // Return false if the button with the given ID doesn't exist
   }
 
+function updateGroupTable(selected) {
+    var words = $(selected).val();
+    if (!words || words.length === 0) {
+        $('tbody tr').show();
+    } else {
+        $('tbody tr').each(function() {
+            var row = $(this);
+            var showRow = false;
+            words.forEach(function(word) {
+                if (row.find('td:first-child').text().includes(word)) {
+                    showRow = true;
+                }
+            });
+            if (showRow) {
+                row.show();
+            } else {
+                row.hide();
+            }
+        });
+    }
+}
+
 
 // FUNCTIONS FOR MANAGE USERS
 
@@ -191,6 +213,28 @@ function deleteUser(user_id, group_id) {
         })
         .catch((error) => {
             console.error('Error:', error);
+        });
+    }
+}
+
+function updateUserTable(selected) {
+    var words = $(selected).val();
+    if (!words || words.length === 0) {
+        $('tbody tr').show();
+    } else {
+        $('tbody tr').each(function() {
+            var row = $(this);
+            var showRow = false;
+            words.forEach(function(word) {
+                if (row.find('td:nth-child(2)').text().includes(word)) {
+                    showRow = true;
+                }
+            });
+            if (showRow) {
+                row.show();
+            } else {
+                row.hide();
+            }
         });
     }
 }
