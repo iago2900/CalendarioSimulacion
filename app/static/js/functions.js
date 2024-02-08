@@ -111,7 +111,7 @@ function deleteEvent(event_id) {
 
 // FUNCTIONS FOR MANAGE GROUPS
 
-function deleteUser(user_id, group_id) {
+function deleteUserGroup(user_id, group_id) {
     if (confirm('Are you sure you want to remove this user from the group?')) {
         // Send a DELETE request
         fetch('/delete_user_group', {
@@ -167,3 +167,30 @@ function isButtonChecked(buttonId) {
     }
     return false; // Return false if the button with the given ID doesn't exist
   }
+
+
+// FUNCTIONS FOR MANAGE USERS
+
+function deleteUser(user_id, group_id) {
+    if (confirm('Are you sure you want to delete this user?')) {
+        // Send a DELETE request
+        fetch('/delete_user', {
+            method: 'DELETE',
+            headers: {
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+            user_id: user_id,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Server response:', data);
+            // Refresh the list of users inside the group
+            location.reload();
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+}

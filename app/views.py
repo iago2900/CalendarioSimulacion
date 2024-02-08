@@ -51,6 +51,24 @@ with app.app_context():
         flash(f'Database error: {e}', 'danger')
         log_error_to_csv(f'Database error: {e}')
 
+def generate_event_details(event, user_id):
+    '''
+    Function used in the below route. Created to avoid repeating code.
+    '''
+    return {
+        'title': event.title,
+        'groupId': event.group_id,
+        'groupName': Groups.query.filter_by(id=event.group_id).first().name if Groups.query.filter_by(id=event.group_id).first() else None,
+        'start': f"{event.date.strftime('%Y-%m-%d')} {event.start_time}",
+        'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
+        'modalId': event.id,
+        'description': event.description,
+        'n_assistants': event.n_assistants,
+        'backgroundColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'white',
+        'borderColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'lightgrey',
+        'textColor': 'black' if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else event.color
+    }
+
 @app.route("/", methods=['GET'])
 @login_required
 def index():
@@ -63,19 +81,7 @@ def index():
     if role_id == 1:
         events = []
         for event in Events.query.all():
-            events.append({
-                'title': event.title,
-                'groupId': event.group_id,
-                'groupName': Groups.query.filter_by(id=event.group_id).first().name if Groups.query.filter_by(id=event.group_id).first() else None,
-                'start': f"{event.date.strftime('%Y-%m-%d')} {event.start_time}",
-                'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
-                'modalId': event.id,
-                'description': event.description,
-                'n_assistants': event.n_assistants,
-                'backgroundColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'white',
-                'borderColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'lightgrey',
-                'textColor': 'black' if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else event.color
-            })
+            events.append(generate_event_details(event, user_id))
 
         return render_template("index.html", events=events, user_id=user_id)
 
@@ -87,37 +93,13 @@ def index():
             events_by_group = Events.query.filter((Events.group_id == usergroup.group_id)).all()
             for event in events_by_group:
                 if event.id not in event_ids:
-                    events.append({
-                        'title': event.title,
-                        'groupId': event.group_id,
-                        'groupName': Groups.query.filter_by(id=event.group_id).first().name if Groups.query.filter_by(id=event.group_id).first() else None,
-                        'start': f"{event.date.strftime('%Y-%m-%d')} {event.start_time}",
-                        'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
-                        'modalId': event.id,
-                        'description': event.description,
-                        'n_assistants': event.n_assistants,
-                        'backgroundColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'white',
-                        'borderColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'lightgrey',
-                        'textColor': 'black' if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else event.color
-                    })
+                    events.append(generate_event_details(event, user_id))
                     event_ids.add(event.id)
         
         # events that do not have a group
         for event in Events.query.filter((Events.group_id == None)).all():
             if event.id not in event_ids:
-                events.append({
-                    'title': event.title,
-                    'groupId': event.group_id,
-                    'groupName': Groups.query.filter_by(id=event.group_id).first().name if Groups.query.filter_by(id=event.group_id).first() else None,
-                    'start': f"{event.date.strftime('%Y-%m-%d')} {event.start_time}",
-                    'end': f"{event.date.strftime('%Y-%m-%d')} {event.end_time}",
-                    'modalId': event.id,
-                    'description': event.description,
-                    'n_assistants': event.n_assistants,
-                    'backgroundColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'white',
-                    'borderColor': event.color if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else 'lightgrey',
-                    'textColor': 'black' if UserEvents.query.filter_by(event_id=event.id, user_id=user_id).first() else event.color
-                })
+                events.append(generate_event_details(event, user_id))
                 event_ids.add(event.id)
 
         return render_template("index.html", events=events, user_id=user_id)
@@ -628,43 +610,65 @@ def delete_event():
         flash(f'Database error: {e}', 'danger')
         log_error_to_csv(f'Database error: {e}')
 
-@app.route("/assign-roles", methods=["GET", "POST"])
+        
+@app.route("/manage-users", methods=["GET","POST"])
 @login_required
 @permission_admin
-def assign_roles():
+def manage_users():
     if request.method == "GET":
-        users = [(user.id, user.name, user.surname) for user in Users.query.all()]
-        roles = [(role.id, role.role) for role in Roles.query.all()]
+    
+        all_users = Users.query.all()
+        return render_template("manage_users.html", all_users=all_users)
 
-        return render_template("assign_roles.html", users=users, roles=roles)
-    else:
-        if not request.form.get("username"):
-            flash("Must select a username.", "danger")
-            return redirect("/assign-roles")
-        elif not request.form.get("role"):
-            flash("Must select a role.", "danger")
-            return redirect("/assign-roles")
-        
-        user_id = request.form.get("username")
-        role_id = request.form.get("role")
-
+@app.route('/delete_user', methods=['DELETE'])
+@login_required
+@permission_admin
+def delete_user():
+    user_id = request.json.get('user_id')  
+    
+    # Buscar el log en la base de datos
+    log_to_delete = Users.query.filter_by(id=user_id).first()
+    
+    if log_to_delete:
         try:
-            # Find the user
-            user = Users.query.filter_by(id=user_id).first()
-            
-            # Update the role_id
-            user.role_id = role_id
+            db_session.delete(log_to_delete)
             db_session.commit()
-
-            flash("Role assigned successfully!", "success")
-
-            return redirect("/")
+            flash("User deleted.", "warning")
+            return jsonify({"message": "Log eliminado exitosamente"})
         except (SQLAlchemyError, Exception) as e:
             db_session.rollback()
             flash(f'Database error: {e}', 'danger')
             log_error_to_csv(f'Database error: {e}')
-            return jsonify({"message": "Error assigning role"})
-        
+    else:
+        return jsonify({"message": "No se encontró el log"})
+
+@app.route("/edit-user-data", methods=['POST'])
+@login_required
+@permission_admin
+def edit_user_data():
+    user_id = request.form.get('user_id')
+    name = request.form.get('name')
+    surname = request.form.get('surname')
+    username = request.form.get('username')
+    role_id = request.form.get('role')
+
+    try:
+        user = Users.query.filter_by(id=user_id).first()
+        if user:
+            user.name = name
+            user.surname = surname
+            user.role_id = role_id
+            db_session.commit()
+            flash("User data updated successfully!", "success")
+        else:
+            flash("User not found", "danger")
+    except (SQLAlchemyError, Exception) as e:
+        db_session.rollback()
+        flash(f'Database error: {e}', 'danger')
+        log_error_to_csv(f'Database error: {e}')
+    
+    return redirect("/manage-users")
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
